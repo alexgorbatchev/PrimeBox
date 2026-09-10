@@ -1,0 +1,14 @@
+[package]
+name = "rx3dec"
+version = "0.1.0"
+edition = "2021"
+description = "XDJ-RX3 .UPD (cryptoloop AES-256-CBC) firmware decryptor"
+license = "MIT"
+
+[[bin]]
+name = "rx3dec"
+path = "src/main.rs"
+
+[dependencies]
+aes = "0.8"
+cbc = "0.1"
