@@ -19,6 +19,12 @@ the RX3 updater (`pdj/decrypt_autoexec.sh`).
 > Other Pioneer `.UPD` files (e.g. CDJ-3000) are genuine **LUKS1** containers
 > and need a different tool. See `docs/01-firmware-extraction.md`.
 
+## Credit
+
+Decryption of Pioneer `.UPD` images was learned from
+[`nsaintot/cdj3k-emu`](https://github.com/nsaintot/cdj3k-emu/tree/main) (see
+its `tools/upd-decrypt` helper). Thanks to them for showing the way.
+
 ## Build & run
 
 ```bash

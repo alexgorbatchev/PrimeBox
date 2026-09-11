@@ -57,13 +57,23 @@ Key    : first 31 bytes of key file line 1 + NUL (32 bytes)
 The 16-byte trailer identifies the model/version and a CRC32. `cryptsetup
 luksDump` rejects the file — that is expected.
 
+The decryption approach here was inspired by
+[`nsaintot/cdj3k-emu`](https://github.com/nsaintot/cdj3k-emu/tree/main).
+
 ### 3b. CDJ-3000 / other players — LUKS1
 
 Other models (e.g. `CDJ3Kv322.UPD`) are genuine **LUKS1** containers at offset
 0 (`LUKS\xba\xbe`, `aes-xts-plain64`, sha256, 512-bit master key). Those need
-`cryptsetup` + `losetup` (see the `cdj3k-emu` `tools/upd-decrypt` helper) or a
+`cryptsetup` + `losetup` (see the [`cdj3k-emu` `tools/upd-decrypt`
+helper](https://github.com/nsaintot/cdj3k-emu/tree/main/tools/upd-decrypt)) or a
 pure-Rust LUKS decryptor. The `aes256.key` supplied for the RX3 is **not** the
 CDJ-3000 key.
+
+> **Credit:** the [`cdj3k-emu`](https://github.com/nsaintot/cdj3k-emu) project
+> (nsaintot) is what showed us how Pioneer `.UPD` images are decrypted in the
+> first place — its `tools/upd-decrypt` helper (LUKS keyfile + `losetup`)
+> was the reference that led to the XDJ-RX3 cryptoloop analysis above. Many
+> thanks to them.
 
 ## 4. Decrypt with `rx3dec`
 

@@ -58,6 +58,10 @@ WORKSTATION$ ls -l keys/aes256.key     # must exist before the next step
 
 ### A2. Decrypt the `.UPD` → ISO
 
+The decryption approach used here comes from
+[`nsaintot/cdj3k-emu`](https://github.com/nsaintot/cdj3k-emu/tree/main) — many
+thanks to that project for showing how Pioneer `.UPD` images are unwrapped.
+
 ```bash
 WORKSTATION$ cd "$REPO/tools/rx3dec"
 WORKSTATION$ cargo build --release

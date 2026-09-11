@@ -42,3 +42,10 @@ stock words before writing.
 Contains `directfb-full.diff`, our complete patch against DirectFB 1.4.16.
 No upstream DirectFB sources are shipped; you fetch them and apply the diff.
 See the [README](build-directfb/README.md).
+
+## Credit
+
+The `.UPD` decryption approach (and the keyfile format used by the Pioneer
+updaters) was learned from
+[`nsaintot/cdj3k-emu`](https://github.com/nsaintot/cdj3k-emu/tree/main), whose
+`tools/upd-decrypt` helper showed how the images are unwrapped. Thanks!

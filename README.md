@@ -137,6 +137,11 @@ progress updates.
 
 ## Credits
 
+* **[nsaintot / cdj3k-emu](https://github.com/nsaintot/cdj3k-emu)** — huge
+  thanks to this project: its `tools/upd-decrypt` helper showed us how Pioneer
+  `.UPD` firmware images are decrypted (LUKS keyfile → losetup/cryptsetup),
+  which is what put us on the path to the XDJ-RX3 cryptoloop scheme. Without
+  their work this project would not exist.
 * Pioneer DJ / AlphaTheta — XDJ-RX3 and the GPL source distribution that made
   this research possible.
 * Denon DJ / inMusic — Prime GO hardware.

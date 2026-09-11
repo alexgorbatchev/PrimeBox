@@ -47,6 +47,13 @@ trademarks of their respective owners. *Denon DJ*, *Prime GO* and *Engine OS*
 are trademarks of inMusic Brands, Inc. All trademarks are used here in a
 descriptive, nominative sense only.
 
+## Acknowledgements
+
+* **[nsaintot/cdj3k-emu](https://github.com/nsaintot/cdj3k-emu/tree/main)** —
+  thanks to this project for demonstrating how Pioneer `.UPD` firmware images
+  are decrypted (its `tools/upd-decrypt` LUKS keyfile + `losetup` helper). That
+  work is the reference this project's `rx3dec` builds on.
+
 ## Third-party components
 
 | Component | License | Used for |
