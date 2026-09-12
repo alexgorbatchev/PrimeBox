@@ -17,6 +17,10 @@ keys/*.bin
 /extracted/*
 !/extracted/README.md
 
+# Deployment artifacts (contains patched proprietary binaries, chroot images)
+/deploy/
+/deploy/*
+
 # Pioneer / Denon binaries
 rbp
 rbp-*
@@ -28,12 +32,19 @@ rbp-*
 *.so.*
 *.a
 *.elf
+scripts/shims/seqinject2
+scripts/shims/udplog
 
 # --- Rust ------------------------------------------------------------------
 target/
+Cargo.lock
 
-# --- OS / editor junk ------------------------------------------------------
+# --- OS / editor / tooling junk --------------------------------------------
 .DS_Store
 Thumbs.db
 *.swp
 *~
+.tmp/
+.cache/
+.codegraph/
+.pi-subagents/

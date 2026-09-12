@@ -25,14 +25,14 @@ key the device's own updater uses; the extracted rootfs contains
 
 To obtain it:
 
-1. Download the XDJ-RX3 archives from the page above (they are large).
-2. Unpack them and search for the key file:
+1. Download the XDJ-RX3 source parts from the page above (`pioneerdj_xdj_rx3.tar.bz2.00` and `.01`).
+2. Concatenate and unpack them:
 
    ```sh
-   # after unpacking the .tar.xz / .tar.bz2 parts
-   find . -name 'aes256.key'
-   # or, if the file is buried in a squashfs/cramfs image, search by name
-   grep -rl 'aes256' . 2>/dev/null
+   cat pioneerdj_xdj_rx3.tar.bz2.00 pioneerdj_xdj_rx3.tar.bz2.01 > pioneerdj_xdj_rx3.tar.bz2
+   tar xjf pioneerdj_xdj_rx3.tar.bz2
+   tar xzf pioneerdj_xdj_rx3/initramfs.tar.gz initramfs/usr/local/pdj/aes256.key
+   cp initramfs/usr/local/pdj/aes256.key keys/aes256.key
    ```
 
 3. Copy it to `keys/aes256.key`.

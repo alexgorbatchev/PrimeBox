@@ -19,7 +19,7 @@ RX3LIB  := $(RX3)/lib
 RX3ULIB := $(RX3)/usr/lib
 
 CFLAGS  := -O2 -march=armv5t -mfloat-abi=soft -fno-stack-protector -fPIC \
-           -Wall -Wextra -Wno-unused-parameter
+           -Wall -Wextra -Wno-unused-parameter -U_TIME_BITS -U_FILE_OFFSET_BITS
 LDFLAGS := -L$(RX3LIB) -L$(RX3ULIB) -Wl,-rpath-link,$(RX3LIB):$(RX3ULIB)
 
 # Shared LD_PRELOAD libraries (soft-float, libc-only NEEDED)

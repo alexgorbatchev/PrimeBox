@@ -123,11 +123,11 @@ WORKSTATION$ make -C scripts/shims RX3="$PWD/extracted/XDJRX3-rootfs"
 WORKSTATION$ make -C scripts/shims RX3="$PWD/extracted/XDJRX3-rootfs" check
 ```
 
-`check` must show only `GLIBC_2.4`/`GLIBC_2.7` and no hard-float tag.
+`check` must show only `GLIBC_2.4` and no hard-float tag.
 
 ### A8. Build the patched DirectFB fbdev module
 
-Follow [`tools/build-directfb/README.md`](tools/build-directfb/README.md). The
+Follow [`tools/build-directfb/README.md`](tools/build-directfb/README.md) using the bundled `compat_shim.c`. The
 result is one file:
 
 ```

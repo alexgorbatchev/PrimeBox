@@ -71,7 +71,8 @@ Consolidated symptom → cause → fix. Each subsystem doc has more detail.
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `version 'GLIBC_2.17' not found` | linked host glibc | link RX3 libs; version-script `GLIBC_2.4` |
+| `symbol open64 is already defined` | modern toolchains define `_FILE_OFFSET_BITS=64` by default, aliasing `open` to `open64` | compile shims with `-U_TIME_BITS -U_FILE_OFFSET_BITS` |
+| `version 'GLIBC_2.15'` / `GLIBC_2.28` / `GLIBC_2.38' not found` | modern cross-headers redirecting POSIX functions (`fstat`, `fcntl`, `__fdelt_chk`, `sscanf`) | compile with `-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -D__GLIBC_USE_ISOC2X=0 -std=gnu89 -fno-stack-protector` and link `compat_shim.c` |
 | `symbol dlopen, version GLIBC_2.4 not defined` | `dlopen` bound to libc 2.34 | link `libdl.so.2`, use `.symver` |
 | `cannot be preloaded … ignored` then works | harmless loader notice | verify the shim's log fills; ignore the stderr line |
 | DirectFB changes silently ignored | broken dependency tracking | `rm -f systems/fbdev/fbdev.lo systems/fbdev/.libs/fbdev.o` before `make` |

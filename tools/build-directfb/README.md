@@ -14,6 +14,7 @@ bookkeeping, and `rbp` crashes (sometimes rebooting the device).
 | File | What |
 |---|---|
 | `directfb-full.diff` | all PrimeBox modifications against DirectFB 1.4.16 |
+| `compat_shim.c` | GLIBC 2.13 compatibility shim preventing modern GLIBC versioned symbols |
 
 There are **no upstream DirectFB source files in this repository**. The diff is
 the only third-party-derived artefact; DirectFB is LGPL-2.1 and the diff (and
@@ -22,8 +23,9 @@ DirectFB tree yourself and apply the diff:
 
 ```bash
 git clone https://github.com/deniskropp/DirectFB.git directfb
-cd directfb && git checkout v1.4.16
+cd directfb && git checkout directfb-1.4
 patch -p1 < /path/to/PrimeBox/tools/build-directfb/directfb-full.diff
+cp /path/to/PrimeBox/tools/build-directfb/compat_shim.c systems/fbdev/compat_shim.c
 ```
 
 The diff contains the usual patch context lines from DirectFB plus the
@@ -58,22 +60,23 @@ cross compiler.
 
 ```bash
 # 0. toolchain
-sudo apt-get install gcc-arm-linux-gnueabi libc6-dev-armel-cross
+sudo apt-get install gcc-arm-linux-gnueabi libc6-dev-armel-cross autoconf automake libtool
 
 # 1. source
 git clone https://github.com/deniskropp/DirectFB.git directfb
 cd directfb
-git checkout v1.4.16
+git checkout directfb-1.4
 
-# 2. apply the patches
+# 2. apply the patches and copy compat_shim.c
 patch -p1 < /path/to/PrimeBox/tools/build-directfb/directfb-full.diff
+cp /path/to/PrimeBox/tools/build-directfb/compat_shim.c systems/fbdev/compat_shim.c
 
 # 3. configure against the RX3 sysroot so the module references only
 #    GLIBC_2.4/2.7 symbols (glibc 2.13 target).
-#    Point CC at the soft-float compiler and pass the RX3 rootfs as sysroot:
+export RX3="/path/to/PrimeBox/extracted/XDJRX3-rootfs"
 export CC=arm-linux-gnueabi-gcc
-export CFLAGS="-march=armv5t -mfloat-abi=soft --sysroot=$RX3"
-export LDFLAGS="--sysroot=$RX3 -Wl,-rpath-link,$RX3/lib:$RX3/usr/lib"
+export CFLAGS="-O2 -march=armv5t -mfloat-abi=soft --sysroot=$RX3 -U_TIME_BITS -U_FILE_OFFSET_BITS -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -D__GLIBC_USE_ISOC2X=0 -std=gnu89 -fno-stack-protector"
+export LDFLAGS="--sysroot=$RX3 -L$RX3/lib -L$RX3/usr/lib -Wl,-rpath-link,$RX3/lib:$RX3/usr/lib"
 
 ./autogen.sh \
     --host=arm-linux-gnueabi \
@@ -82,11 +85,27 @@ export LDFLAGS="--sysroot=$RX3 -Wl,-rpath-link,$RX3/lib:$RX3/usr/lib"
     --with-gfxdrivers=none \
     --disable-osx --disable-devmem
 
-make -C systems/fbdev libdirectfb_fbdev.la
+# 4. build headers & dependencies, then compile fbdev
+make -C include
+make -C lib/direct
+make -C lib/fusion
+make -C systems/fbdev
+
+# 5. link the module against the RX3 userland libraries
+cd systems/fbdev/.libs
+arm-linux-gnueabi-gcc -shared -fPIC -O2 -march=armv5t -mfloat-abi=soft -fno-stack-protector \
+    -o libdirectfb_fbdev.so \
+    compat_shim.o agp.o fbdev.o fbdev_surface_pool.o surfacemanager.o vt.o \
+    $RX3/usr/lib/libdirectfb-1.4.so.0 \
+    $RX3/usr/lib/libdirect-1.4.so.0 \
+    $RX3/usr/lib/libfusion-1.4.so.0 \
+    -lpthread -lc \
+    -Wl,-soname,libdirectfb_fbdev.so \
+    -L$RX3/lib -L$RX3/usr/lib \
+    -Wl,-rpath-link,$RX3/lib:$RX3/usr/lib
 ```
 
-Some builds leave `fstat`/`__fdelt_chk` unversioned; if so, add a tiny
-`compat_shim.c` in `systems/fbdev` that forwards them via `syscall()`.
+The bundled `compat_shim.c` in `systems/fbdev` ensures functions like `fstat()`, `__fdelt_chk()`, and `fcntl()` do not pull in newer GLIBC symbols from modern host cross-headers.
 
 ## Soname fix-up
 
