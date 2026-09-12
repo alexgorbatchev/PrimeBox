@@ -123,12 +123,23 @@ WORKSTATION$ make -C scripts/shims RX3="$PWD/extracted/XDJRX3-rootfs"
 WORKSTATION$ make -C scripts/shims RX3="$PWD/extracted/XDJRX3-rootfs" check
 ```
 
-`check` must show only `GLIBC_2.4` and no hard-float tag.
+`check` must show only `GLIBC_2.4`/`GLIBC_2.7` and no hard-float tag.
+You can also run automated link and module validation:
+
+```bash
+WORKSTATION$ python3 tools/build-directfb/verify-rx3-links.py \
+    extracted/XDJRX3-rootfs scripts/shims/*.so
+```
 
 ### A8. Build the patched DirectFB fbdev module
 
-Follow [`tools/build-directfb/README.md`](tools/build-directfb/README.md) using the bundled `compat_shim.c`. The
-result is one file:
+Follow [`tools/build-directfb/README.md`](tools/build-directfb/README.md). You can
+verify the resulting module using:
+
+```bash
+WORKSTATION$ python3 tools/build-directfb/verify-module.py \
+    deploy/libdirectfb_fbdev-rot16.so extracted/XDJRX3-rootfs
+```
 
 ```
 libdirectfb_fbdev.so
@@ -281,9 +292,11 @@ PRIMEGO# cat /data/usbwatch.log
 
 ---
 
-## Part D — Add it to the boot menu
+## Part D — Boot menu & Headless Launch
 
-Put `start-rb.sh` in the Denon launcher config (`/data/launcher.conf`):
+### Option 1: Touchscreen Boot Menu (Units with RetroGo mod)
+
+If your unit has the third-party RetroGo / homebrew touch launcher installed (`/data/launcher`), add `start-rb.sh` to the config (`/data/launcher.conf`):
 
 ```
 # DJ Apps
@@ -296,6 +309,10 @@ BACK TO ENGINE |
 
 `start-rb.sh` runs in the foreground for the lifetime of `rbp`, so the launcher
 does not redraw over it, and it cleans up the daemons when `rbp` exits.
+
+### Option 2: Headless / Stock Launch (Untested on hardware)
+
+For units without the RetroGo boot menu, several headless launch approaches (such as USB auto-launch on `export.pdb` detection or MIDI button chords) are outlined in [docs/09-runtime-launcher.md](docs/09-runtime-launcher.md#32-alternative-standalone-launch-approaches-untested-on-hardware). *Note: these alternative methods have not yet been validated on physical hardware.*
 
 ---
 
