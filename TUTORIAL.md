@@ -56,53 +56,38 @@ and place it at `keys/aes256.key`. The path is gitignored. Full instructions:
 WORKSTATION$ ls -l keys/aes256.key     # must exist before the next step
 ```
 
-### A2. Decrypt the `.UPD` → ISO
+### A2. Stage & extract the RX3 rootfs (single pure-Python command)
 
-The decryption approach used here comes from
-[`nsaintot/cdj3k-emu`](https://github.com/nsaintot/cdj3k-emu/tree/main) — many
-thanks to that project for showing how Pioneer `.UPD` images are unwrapped.
+The decryption approach is derived from the pioneering work in
+[`nsaintot/cdj3k-emu`](https://github.com/nsaintot/cdj3k-emu/tree/main).
+PrimeBox runs the entire decryption, ISO unpacking, and cramfs decompression in a
+single command using [`tools/bundle/prepare-rx3.py`](tools/bundle/README.md)
+(no Rust compiler or Docker required):
 
 ```bash
-WORKSTATION$ cd "$REPO/tools/rx3dec"
-WORKSTATION$ cargo build --release
-WORKSTATION$ ./target/release/rx3dec \
-    ~/xdjrx3-fw/XDJ-RX3_v120/XDJ-RX3.UPD \
-    "$REPO/keys/aes256.key" \
-    "$REPO/extracted/XDJRX3.iso"
+WORKSTATION$ python3 "$REPO/tools/bundle/prepare-rx3.py" \
+    --firmware ~/xdjrx3-fw/XDJ-RX3_v120.zip \
+    --gpl ~/xdjrx3-fw/pioneerdj_xdj_rx3.tar.bz2.00.zip ~/xdjrx3-fw/pioneerdj_xdj_rx3.tar.bz2.01.zip \
+    --output "$REPO/extracted/XDJRX3"
 ```
 
-Expect `[+] OK: ISO 9660 signature CD001 found at sector 64`.
+This single command:
+1. Recovers the AES-256 decryption key from `initramfs`.
+2. Decrypts `XDJRX3.UPD` to memory.
+3. Unpacks the ISO and decompresses `rootfs.cramfs` directly in Python.
+4. Extracts fonts (`gui`), settings, and player binary (`pdj/rbp`).
 
-> **Tip (Alternative Pure-Python Extraction):** You can also run `python3 tools/bundle/prepare-rx3.py --firmware <XDJRX3.zip> --gpl <part00.zip> <part01.zip> --output extracted/staging` to perform key recovery, decryption, and cramfs extraction in a single command without Rust or Docker. See [`tools/bundle/README.md`](tools/bundle/README.md).
-
-### A3. Extract the ISO
+Symlink the extracted rootfs for the shim build:
 
 ```bash
-WORKSTATION$ cd "$REPO"
-WORKSTATION$ mkdir -p extracted/XDJRX3
-WORKSTATION$ 7z x extracted/XDJRX3.iso -oextracted/XDJRX3 >/dev/null
-WORKSTATION$ cat extracted/XDJRX3/images/release.txt    # 1.20
+WORKSTATION$ ln -s "$REPO/extracted/XDJRX3/rootfs" "$REPO/extracted/XDJRX3-rootfs"
 ```
 
-### A4. Extract the `gui` partition (fonts are mandatory)
+### A3. Verify extracted files
 
 ```bash
-WORKSTATION$ mkdir -p extracted/XDJRX3-gui
-WORKSTATION$ tar xzf extracted/XDJRX3/images/gui.tar.gz -C extracted/XDJRX3-gui
-WORKSTATION$ ls extracted/XDJRX3-gui/pset/fontdata/ | head
-```
-
-### A5. Extract the rootfs (runtime + DeviceSQL)
-
-```bash
-WORKSTATION$ mkdir -p extracted/XDJRX3-rootfs
-WORKSTATION$ docker run --rm --privileged \
-  -v "$PWD/extracted/XDJRX3/images/rootfs.cramfs:/in/r.cramfs:ro" \
-  -v "$PWD/extracted/XDJRX3-rootfs:/out" \
-  --entrypoint bash ubuntu:18.04 -c '
-    apt-get update -qq && apt-get install -y -qq fusecram
-    mkdir -p /mnt/r && fusecram /in/r.cramfs /mnt/r & sleep 4
-    cp -a /mnt/r/. /out/'
+WORKSTATION$ ls -la "$REPO/extracted/XDJRX3/pdj/rbp"
+WORKSTATION$ ls "$REPO/extracted/XDJRX3/gui/pset/fontdata/" | head
 ```
 
 ### A6. Patch `rbp`

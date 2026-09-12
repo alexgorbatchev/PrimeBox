@@ -46,13 +46,12 @@ to have decrypted it already, so the GPL archive is the independent source.
 The file is 90 bytes: two base64-looking lines. The RX3 loader does
 `xgetpass()` + `xstrncpy(dst, src, 32)`, so the **effective key** is the first
 **31 bytes of the first line** plus a terminating NUL (32 bytes total).
-`tools/rx3dec` derives the 32-byte effective key automatically.
+`tools/bundle/prepare-rx3.py` extracts and derives this key automatically from the GPL source parts.
 
 ## Verifying
 
-`tools/rx3dec` prints the derived key prefix and checks for the ISO 9660
-`CD001` signature at sector 64. If the signature is missing, the key or the
-file layout is wrong.
+`tools/bundle/prepare-rx3.py` verifies the derived key prefix and checks for the ISO 9660
+`CD001` signature at sector 64 during staging. If the signature is missing, decryption halts with an error.
 
 ## Legal note
 

@@ -39,7 +39,5 @@ fi
 
 echo
 echo "Next:"
-echo "  1. obtain the firmware key from AlphaTheta's GPL archive and save it"
-echo "     as keys/aes256.key  (see keys/README.md - the key is NOT shipped)"
-echo "  2. cd tools/rx3dec && cargo build --release"
-echo "  3. ./target/release/rx3dec $DEST/*/XDJ-RX3.UPD ../../keys/aes256.key XDJRX3.iso"
+echo "  1. download the GPL source parts from AlphaTheta (see keys/README.md)"
+echo "  2. run python3 tools/bundle/prepare-rx3.py --firmware $OUT --gpl <part00.zip> <part01.zip> --output extracted/XDJRX3"

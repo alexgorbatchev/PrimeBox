@@ -3,8 +3,6 @@
 Pioneer DJ XDJ-RX3 rekordbox standalone player (`rbp`) interoperability and hardware translation layer for Denon DJ Prime GO.
 
 ## Commands
-- Build firmware decryptor: `cd tools/rx3dec && cargo build --release`
-- Decrypt firmware: `./tools/rx3dec/target/release/rx3dec <path/to/XDJRX3.UPD> keys/aes256.key extracted/XDJRX3.iso`
 - Pure Python staging pipeline: `python3 tools/bundle/prepare-rx3.py --firmware <XDJRX3.zip> --gpl <part00.zip> <part01.zip> --output <staging_dir>`
 - Apply interoperability patches: `python3 tools/patch-rbp/rbp_patch.py extracted/stock-rbp -o extracted/rbp-audio`
 - Build ARM32 soft-float translation shims: `make -C scripts/shims RX3="$PWD/extracted/XDJRX3-rootfs"`
@@ -16,7 +14,7 @@ Pioneer DJ XDJ-RX3 rekordbox standalone player (`rbp`) interoperability and hard
 
 ## Setup & Prerequisites
 - Cross compiler: `gcc-arm-linux-gnueabi` and `libc6-dev-armel-cross` (Target: ARMv5t / ARM32 soft-float EABI5).
-- Build tools: `autoconf`, `automake`, `libtool`, `patchelf`, `p7zip-full`, `docker` (for `fusecram`).
+- Build & Python tools: `autoconf`, `automake`, `libtool`, `patchelf`, `unzip` (Deflate64), `pycryptodome`, `pycdlib`.
 - Firmware update image: Official XDJ-RX3 v1.20 `.UPD` (SHA256: `e81f34ef300c5faa7faf4b4c436eaaf1476d407447b2dbb845c7fbddb4f51389`).
 
 ## Conventions

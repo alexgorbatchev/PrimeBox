@@ -42,7 +42,7 @@ It describes the one working design — not the dead ends along the way.
                     XDJ-RX3 firmware v1.20 (.UPD)
                               │
        ┌──────────────────────┴───────────────────────┐
-       │ 1. decrypt (AES-256-CBC / cryptoloop)         │  tools/rx3dec
+       │ 1. stage & decrypt (AES-256-CBC, cramfs, ISO) │  tools/bundle/prepare-rx3.py
        │ 2. extract pdj/rbp  (ARM32, soft-float)       │
        │ 3. apply interoperability patches             │  tools/patch-rbp
        └──────────────────────┬───────────────────────┘
@@ -66,21 +66,20 @@ It describes the one working design — not the dead ends along the way.
 Full instructions live in **[TUTORIAL.md](TUTORIAL.md)**. The short version:
 
 ```bash
-# 0. prerequisites: arm-linux-gnueabi-gcc, docker, rust, patchelf
-./tools/get-firmware.sh ~/xdjrx3-fw        # official XDJ-RX3 v1.20 .UPD
-#    supply the firmware key at keys/aes256.key (see keys/README.md)
+# 0. prerequisites: arm-linux-gnueabi-gcc, patchelf, python3, uv
+./tools/get-firmware.sh ~/xdjrx3-fw        # download official firmware and GPL parts
 
-# 1. decrypt .UPD -> ISO, then extract it (see the tutorial)
-cd tools/rx3dec && cargo build --release && cd ../..
-./tools/rx3dec/target/release/rx3dec \
-    ~/xdjrx3-fw/XDJ-RX3_v120/XDJ-RX3.UPD keys/aes256.key extracted/XDJRX3.iso
-7z x extracted/XDJRX3.iso -oextracted/XDJRX3
+# 1. extract and stage RX3 userland (single pure-Python command)
+python3 tools/bundle/prepare-rx3.py \
+    --firmware ~/xdjrx3-fw/XDJ-RX3_v120.zip \
+    --gpl ~/xdjrx3-fw/part00.zip ~/xdjrx3-fw/part01.zip \
+    --output extracted/XDJRX3
 
 # 2. patch the player
 python3 tools/patch-rbp/rbp_patch.py extracted/XDJRX3/pdj/rbp -o extracted/rbp-audio
 
 # 3. build the ARM32 shims (soft-float, glibc 2.13 ABI)
-make -C scripts/shims RX3="$PWD/extracted/XDJRX3-rootfs"
+make -C scripts/shims RX3="$PWD/extracted/XDJRX3/rootfs"
 
 # 4. copy the payload to the Prime GO and run the launcher
 scp deploy/* root@YOUR_PRIMEGO:/data/
@@ -105,7 +104,6 @@ PrimeBox/
 │   └── shims/                our LD_PRELOAD / translation shims (C)
 ├── tests/                    unit tests for verification and device safety
 └── tools/
-    ├── rx3dec/               .UPD → ISO decryptor (Rust)
     ├── bundle/               pure-Python firmware extractor / staging tool
     ├── patch-rbp/            rbp binary patcher + patch reference
     └── build-directfb/       patched DirectFB fbdev module + verification tools

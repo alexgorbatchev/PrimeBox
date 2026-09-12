@@ -75,77 +75,28 @@ CDJ-3000 key.
 > was the reference that led to the XDJ-RX3 cryptoloop analysis above. Many
 > thanks to them.
 
-## 4. Decrypt with `rx3dec`
+## 4. Extract and stage with `prepare-rx3.py`
 
-`tools/rx3dec/` is a small Rust program (based on `RustCrypto`) that implements
-the XDJ-RX3 cryptoloop scheme.
-
-```bash
-cd tools/rx3dec
-cargo build --release
-
-# usage: rx3dec <input.UPD> <keyfile> <output.iso>
-#        <keyfile> is the user-supplied key from ../keys/
-./target/release/rx3dec \
-    XDJRX3.UPD ../../keys/aes256.key ../XDJRX3.iso
-```
-
-Expected output (the key prefix is truncated here):
-
-```
-[+] key = <your key> (31 bytes -> 32)
-[+] body: 69171200 bytes (135100 sectors), trailer: [...]
-[+] OK: ISO 9660 signature CD001 found at sector 64
-[+] wrote ../XDJRX3.iso (69171200 bytes)
-```
-
-Sanity check the result:
+PrimeBox provides a single pure-Python staging script (`tools/bundle/prepare-rx3.py`) that handles key recovery, AES-256-CBC decryption, ISO parsing, and userland decompression in one command without requiring root, Docker, or external tools:
 
 ```bash
-file XDJRX3.iso            # ISO 9660 CD-ROM filesystem data 'UsbAuto'
-7z l XDJRX3.iso | head     # or: sudo mount -o loop,ro XDJRX3.iso /mnt
+python3 tools/bundle/prepare-rx3.py \
+    --firmware /path/to/XDJ-RX3_v120.zip \
+    --gpl /path/to/pioneerdj_xdj_rx3.tar.bz2.00.zip /path/to/pioneerdj_xdj_rx3.tar.bz2.01.zip \
+    --output extracted/XDJRX3
 ```
 
-## 5. Extract the ISO
+### Staging results:
 
-The ISO is a normal ISO 9660 image with this layout:
+* `extracted/XDJRX3/pdj/` — contains `rbp` (the player binary), launch scripts.
+* `extracted/XDJRX3/gui/` — contains mandatory fonts (`system/fontdata/*.ttf`) and bitmaps.
+* `extracted/XDJRX3/rootfs/` — base Linux rootfs (`glibc 2.13`, DirectFB libraries, `edb_streamd`).
+* `extracted/XDJRX3/settings/` — default configuration files.
 
-```
-images/
-  uImage              Linux 3.0.101 kernel (i.MX6)
-  rootfs.cramfs       base Linux (busybox, ALSA, DirectFB, ...)
-  u-boot.bin.nand     bootloader
-  gui.tar.gz          display resources (fonts, pset, imagedata)
-  pdj.tar.gz          the rekordbox application partition
-  settings.tar.gz     settings
-  LCD.bin, LCD_RT.bin display bitmaps
-  EUP.mot, SUB.mot    front-panel / sub-board MCU firmware
-  release.txt         "1.20"
-pdj/                  launch scripts (apl_start, decrypt_autoexec.sh)
-update, usb_update.sh
-```
-
-Mount or extract:
+Copy the stock player binary to the staging folder:
 
 ```bash
-mkdir -p extracted/XDJRX3
-sudo mount -o loop,ro XDJRX3.iso /mnt/rx3
-sudo cp -a /mnt/rx3/. extracted/XDJRX3/
-sudo umount /mnt/rx3
-# or, without root:
-7z x XDJRX3.iso -oextracted/XDJRX3
-```
-
-### The player binary
-
-The rekordbox application is **`pdj/rbp`** (7,620,543 bytes, ARM32 EABI5
-soft-float, not stripped). It is *not* in the rootfs; it lives in the `pdj`
-partition (`images/pdj.tar.gz`):
-
-```bash
-cd extracted/XDJRX3
-tar xzf images/pdj.tar.gz      # -> pdj/rbp, pdj/apl_start, ...
-cp pdj/rbp ../stock-rbp
+cp extracted/XDJRX3/pdj/rbp extracted/stock-rbp
 ```
 
 ### The `gui` partition (fonts are essential)
@@ -160,71 +111,23 @@ ls extracted/XDJRX3-gui/pset/fontdata/   # NS_FONT_ID_*.bin
 ls extracted/XDJRX3-gui/system/fontdata/ # *.ttf
 ```
 
-### The rootfs (runtime + `edb_streamd`)
-
-`rootfs.cramfs` is a cramfs image. Many modern host kernels cannot mount cramfs; you can use
-`fusecram` in a container:
-
-```bash
-mkdir -p extracted/XDJRX3-rootfs
-docker run --rm --privileged \
-  -v "$PWD/extracted/XDJRX3/images/rootfs.cramfs:/in/r.cramfs:ro" \
-  -v "$PWD/extracted/XDJRX3-rootfs:/out" \
-  --entrypoint bash ubuntu:18.04 -c '
-    apt-get update -qq && apt-get install -y -qq fusecram
-    mkdir -p /mnt/r && fusecram /in/r.cramfs /mnt/r & sleep 4
-    cp -a /mnt/r/. /out/'
-```
-
----
-
-## 6. Alternative: Pure Python All-in-One Staging Pipeline
-
-If you prefer not to use Rust, Docker, or root mounts, you can use the pure-Python staging script at [`tools/bundle/prepare-rx3.py`](../tools/bundle/README.md).
-
-### Prerequisites:
-```bash
-uv pip install pycryptodome pycdlib
-```
-
-### Run staging:
-```bash
-python3 tools/bundle/prepare-rx3.py \
-    --firmware /path/to/XDJ-RX3_v120.zip \
-    --gpl /path/to/pioneerdj_xdj_rx3.tar.bz2.00.zip /path/to/pioneerdj_xdj_rx3.tar.bz2.01.zip \
-    --output extracted/staging
-```
-
-This single command extracts the decryption key, decrypts the `.UPD` image, parses the ISO, and decompresses the `cramfs` rootfs directly in userland.
-
-From the rootfs you need, at minimum:
-
-* `lib/` — soft-float **glibc 2.13** runtime (`ld-linux.so.3`, `libc.so.6`,
-  `libpthread.so.0`, `libdl.so.2`, `librt.so.1`, `libm.so.6`, …),
-* `usr/lib/` — `libstdc++`, DirectFB 1.4, freetype, `libg2d`, GAL stubs, etc.,
-* `usr/bin/edb_streamd`, `usr/bin/kill_daemon` — DeviceSQL database daemon,
-* `bin/busybox` — used as `/bin/sh` inside the chroot,
-* `usr/share/alsa/` — ALSA configuration,
-* `usr/local/pdj/aes256.key` — confirmation of the key (optional),
-* `lib/libGAL.so` — 59 `gco*` Vivante GPU symbols. The RX3 rootfs may ship a
-  stub; otherwise create one (the Prime GO has no Vivante GPU).
-
-## 6. What you should end up with
+## 5. What you should end up with
 
 ```
 extracted/
-├── XDJRX3.iso
-├── XDJRX3/            # ISO contents
-├── XDJRX3-gui/        # gui.tar.gz contents (fonts!)
-├── XDJRX3-rootfs/     # rootfs.cramfs contents
+├── XDJRX3/
+│   ├── pdj/           # player binary & launch scripts
+│   ├── gui/           # fonts (system/fontdata/*.ttf) and bitmaps
+│   ├── rootfs/        # glibc 2.13 runtime, DirectFB libs, edb_streamd
+│   └── settings/      # default settings
 └── stock-rbp          # pdj/rbp, md5 4f2efcfc0c9e3f539289f863acfddcc6
 ```
 
 Verify the stock binary hash before patching:
 
 ```bash
-md5sum stock-rbp
-# 4f2efcfc0c9e3f539289f863acfddcc6  stock-rbp
+md5sum extracted/stock-rbp
+# 4f2efcfc0c9e3f539289f863acfddcc6  extracted/stock-rbp
 ```
 
 ## 7. Next step

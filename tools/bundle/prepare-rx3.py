@@ -12,11 +12,20 @@ from pathlib import Path, PurePosixPath
 import stat
 import struct
 import subprocess
+import sys
 import tarfile
 import zipfile
 import zlib
 from Crypto.Cipher import AES
 import pycdlib
+
+
+def is_relative_to(path: Path, base: Path) -> bool:
+    try:
+        path.resolve().relative_to(base.resolve())
+        return True
+    except ValueError:
+        return False
 
 
 def confined_name(name):
@@ -34,9 +43,11 @@ def unpack_cramfs(image, destination):
         raise ValueError('truncated cramfs')
     links = []
     count = 0
+
     def inode(offset):
         a, b, c = struct.unpack_from('<III', image, offset)
         return a & 0xffff, b & 0xffffff, (c & 63) * 4, (c >> 6) * 4
+
     def content(size, offset):
         blocks = (size + 4095) // 4096
         start = offset + blocks * 4
@@ -50,6 +61,7 @@ def unpack_cramfs(image, destination):
         if len(output) < size:
             raise ValueError('truncated cramfs file')
         return bytes(output[:size])
+
     def visit(path, node):
         nonlocal count
         mode, size, _, offset = node
@@ -72,6 +84,7 @@ def unpack_cramfs(image, destination):
         elif stat.S_ISLNK(mode):
             links.append((path, content(size, offset).decode()))
         # Device nodes are intentionally omitted: runtime mounts supply them.
+
     visit(destination, inode(64))
     # Create links last and convert absolute chroot links to confined relative
     # links, so host-side inspection cannot resolve into the host filesystem.
@@ -80,7 +93,7 @@ def unpack_cramfs(image, destination):
             resolved = destination / target.lstrip('/')
         else:
             resolved = Path(os.path.normpath(path.parent / target))
-        if not resolved.is_relative_to(destination):
+        if not is_relative_to(resolved, destination):
             raise ValueError(f'escaping symlink: {path}')
         path.symlink_to(os.path.relpath(resolved, path.parent))
     return count
@@ -91,7 +104,7 @@ def extract_regular_tar(blob, out):
         for member in archive:
             relative = confined_name(member.name)
             target = out / relative
-            if not target.resolve().is_relative_to(out.resolve()):
+            if not is_relative_to(target, out):
                 raise ValueError(f'escaping tar destination: {member.name}')
             if member.isdir():
                 target.mkdir(parents=True, exist_ok=True)
