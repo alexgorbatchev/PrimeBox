@@ -1,4 +1,3 @@
-import importlib.util
 import io
 import os
 from pathlib import Path
@@ -8,14 +7,10 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-ROOT = Path(__file__).resolve().parents[1]
-spec_verify = importlib.util.spec_from_file_location('verify_module', ROOT / 'tools/build-directfb/verify-module.py')
-verify = importlib.util.module_from_spec(spec_verify)
-spec_verify.loader.exec_module(verify)
+import primebox.verify.verify_links as links
+import primebox.verify.verify_module as verify
 
-spec_links = importlib.util.spec_from_file_location('verify_links', ROOT / 'tools/build-directfb/verify-rx3-links.py')
-links = importlib.util.module_from_spec(spec_links)
-spec_links.loader.exec_module(links)
+ROOT = Path(__file__).resolve().parents[1]
 
 
 class ModuleChecks(unittest.TestCase):
@@ -85,10 +80,10 @@ class ModuleChecks(unittest.TestCase):
                     verify.uint_symbol(dummy, 'my_sym')
 
     def test_module_main_cli(self):
-        with patch.object(verify.sys, 'argv', ['verify-module.py']):
+        with patch.object(verify.sys, 'argv', ['primebox-verify-module']):
             self.assertEqual(verify.main(), 1)
 
-        with patch.object(verify.sys, 'argv', ['verify-module.py', 'test.so']), \
+        with patch.object(verify.sys, 'argv', ['primebox-verify-module', 'test.so']), \
              patch.object(verify.subprocess, 'check_output') as mock_run:
             def side_effect(cmd, **kwargs):
                 tool = cmd[0]
@@ -114,7 +109,7 @@ class ModuleChecks(unittest.TestCase):
             mod_file = root / 'test.so'
             mod_file.touch()
 
-            with patch.object(verify.sys, 'argv', ['verify-module.py', str(mod_file), str(root)]), \
+            with patch.object(verify.sys, 'argv', ['primebox-verify-module', str(mod_file), str(root)]), \
                  patch.object(verify.subprocess, 'check_output') as mock_run, \
                  patch.object(verify, 'uint_symbol', side_effect=[9, 8]):  # expected 9, actual 8
                 def side_effect2(cmd, **kwargs):
@@ -168,7 +163,7 @@ Symbol table '.dynsym' contains 3 entries:
                 self.assertEqual(verify.uint_symbol(path, 'dfb_core_systems', 28), 9)
 
     def test_links_main_cli(self):
-        with patch.object(links.sys, 'argv', ['verify-rx3-links.py']):
+        with patch.object(links.sys, 'argv', ['primebox-verify-links']):
             self.assertEqual(links.main(), 1)
 
         with tempfile.TemporaryDirectory() as tmp:
@@ -182,7 +177,7 @@ Symbol table '.dynsym' contains 3 entries:
             target_so.touch()
 
             # Successful resolution
-            with patch.object(links.sys, 'argv', ['verify-rx3-links.py', str(root), str(target_so)]), \
+            with patch.object(links.sys, 'argv', ['primebox-verify-links', str(root), str(target_so)]), \
                  patch.object(links, 'inspect', side_effect=[
                      (['libdep.so'], set(), {'dep_func'}),
                      ([], {'dep_func'}, set())
@@ -190,7 +185,7 @@ Symbol table '.dynsym' contains 3 entries:
                 self.assertEqual(links.main(), 0)
 
             # Missing dependency library
-            with patch.object(links.sys, 'argv', ['verify-rx3-links.py', str(root), str(target_so)]), \
+            with patch.object(links.sys, 'argv', ['primebox-verify-links', str(root), str(target_so)]), \
                  patch.object(links, 'inspect', return_value=(['libmissing.so'], set(), set())):
                 with self.assertRaisesRegex(SystemExit, 'requires missing RX3 library libmissing.so'):
                     links.main()

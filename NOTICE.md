@@ -56,7 +56,7 @@ descriptive, nominative sense only.
 * **[@silonelnilo](https://github.com/silonelnilo/PrimeBox_Prime2)** —
   thanks for contributing modern GLIBC 2.13 toolchain hardening (`legacy-scan.c`, 32-bit time/offset pinning),
   device chroot mountpoint safety guards (`fix-dev.sh`), ELF and DirectFB verification tooling
-  (`verify-module.py`, `verify-rx3-links.py`), and the pure-Python staging pipeline (`prepare-rx3.py`).
+  (`primebox-verify-module`, `primebox-verify-links`), and the pure-Python staging pipeline (`primebox-prepare`).
 
 ## Third-party components
 

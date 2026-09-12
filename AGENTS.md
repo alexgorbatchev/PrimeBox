@@ -3,14 +3,15 @@
 Pioneer DJ XDJ-RX3 rekordbox standalone player (`rbp`) interoperability and hardware translation layer for Denon DJ Prime GO.
 
 ## Commands
-- Pure Python staging pipeline: `python3 tools/bundle/prepare-rx3.py --firmware <XDJRX3.zip> --gpl <part00.zip> <part01.zip> --output <staging_dir>`
-- Configure device launcher & auto-start: `python3 tools/launcher/setup_launcher.py [--root <dir>] [--remote root@<ip>] [--mode retrogo|udev|all] [--install-retrogo]`
-- Apply interoperability patches: `python3 tools/patch-rbp/rbp_patch.py extracted/stock-rbp -o extracted/rbp-audio`
+- Pure Python staging pipeline: `uv run primebox-prepare --firmware <XDJRX3.zip> --gpl <part00.zip> <part01.zip> --output <staging_dir>`
+- Configure device launcher & auto-start: `uv run primebox-launcher [--root <dir>] [--remote root@<ip>] [--mode retrogo|udev|all] [--install-retrogo]`
+- Apply interoperability patches: `uv run primebox-patch extracted/stock-rbp -o extracted/rbp-audio`
 - Build ARM32 soft-float translation shims: `make -C scripts/shims RX3="$PWD/extracted/XDJRX3-rootfs"`
 - Verify shim GLIBC symbols & soft-float ABI: `make -C scripts/shims RX3="$PWD/extracted/XDJRX3-rootfs" check`
-- Verify ELF link dependencies: `python3 tools/build-directfb/verify-rx3-links.py extracted/XDJRX3-rootfs scripts/shims/*.so`
-- Verify DirectFB module: `python3 tools/build-directfb/verify-module.py <module.so> extracted/XDJRX3-rootfs`
+- Verify ELF link dependencies: `uv run primebox-verify-links extracted/XDJRX3-rootfs scripts/shims/*.so`
+- Verify DirectFB module: `uv run primebox-verify-module <module.so> extracted/XDJRX3-rootfs`
 - Run test suite: `uv run python -m unittest discover -s tests -v`
+- Run test suite with coverage: `uv run coverage run -m unittest discover -s tests && uv run coverage report -m`
 - Build patched DirectFB fbdev module: See instructions in `tools/build-directfb/README.md`
 
 ## Setup & Prerequisites
@@ -66,7 +67,7 @@ Pioneer DJ XDJ-RX3 rekordbox standalone player (`rbp`) interoperability and hard
 - Always (code-based projects only): any time code is changed such that results from running that code are changed, a test file must be changed as well; 90% code coverage is required (`scripts/` folder is excluded from this rule).
 - Always: STRICT PROHIBITION against string sampling in unit tests. All generated configuration files, scripts, udev rules, templates, and command payloads MUST be asserted with complete, 100% exact full-string or structural equality (never loose `assertIn`, substring, or partial sampling checks for generated files or text).
 - Always: run `make -C scripts/shims check` after modifying any shim C code to verify zero hard-float tags and strict `GLIBC_2.4` linkage.
-- Ask first: structural changes to memory patch offsets in `tools/patch-rbp/rbp_patch.py` or DirectFB rotation logic in `tools/build-directfb/directfb-full.diff`.
+- Ask first: structural changes to memory patch offsets in `src/primebox/patch/patch_rbp.py` or DirectFB rotation logic in `tools/build-directfb/directfb-full.diff`.
 - Never: publish releases, tags, packages, or production deployments automatically without explicit user authorization.
 
 ### Strict Legal & Clean-Room Git History Boundaries
@@ -79,10 +80,13 @@ Pioneer DJ XDJ-RX3 rekordbox standalone player (`rbp`) interoperability and hard
 - **NEVER commit or stage deployment directories**:
   - The `/deploy/` folder contains generated chroot bundles and patched executables; it is strictly gitignored and must never be tracked in git history.
 - **Maintain Clean-Room Interoperability Separation**:
-  - Only commit original translation source code (C), build automation scripts, documentation, and byte-offset patch definitions (`rbp_patch.py`).
+  - Only commit original translation source code (C), build automation scripts, documentation, and byte-offset patch definitions (`src/primebox/patch/patch_rbp.py`).
+
+## User Instructions & Architecture History
+- **Python Package Standardization (PEP 621 / `src/` Layout)**: Reworked the repository from ad-hoc standalone scripts into a standard Python package (`src/primebox`) managed with `uv` and `pyproject.toml`, containing modules for `bundle`, `launcher`, `patch`, and `verify`. Colocation of tests is avoided in favor of a clean root `tests/` directory with direct package imports. Missing test suites (including `tests/test_patch_rbp.py`) are added with >= 90% code coverage.
 
 ## References
 - Repository Overview: `README.md`
 - Step-by-Step Setup: `TUTORIAL.md`
-- Subsystem Documentation: `docs/00-overview.md` to `docs/11-troubleshooting.md`
+- Subsystem Documentation: `docs/00-overview.md` to `docs/12-patches.md`
 - Legal and Copyright Notice: `NOTICE.md`

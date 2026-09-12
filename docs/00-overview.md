@@ -75,7 +75,7 @@ PLAY button → knobshim2 → sendKey(0x4101)
 See the top-level [README](../README.md). Each subsystem has a focused
 document; the memory map and patch table live in
 [10 — Memory map](10-memory-map.md) and
-[`tools/patch-rbp/PATCHES.md`](../tools/patch-rbp/PATCHES.md).
+[12 — Patches](12-patches.md).
 
 ## Prerequisites
 

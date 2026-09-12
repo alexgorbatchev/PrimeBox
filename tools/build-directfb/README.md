@@ -124,7 +124,7 @@ done
 Verify the compiled module against the RX3 rootfs using the automated validator:
 
 ```bash
-python3 tools/build-directfb/verify-module.py \
+uv run primebox-verify-module \
     systems/fbdev/.libs/libdirectfb_fbdev.so "$RX3"
 ```
 

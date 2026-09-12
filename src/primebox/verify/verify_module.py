@@ -4,11 +4,11 @@
 Contributed by @silonelnilo (PrimeBox_Prime2).
 """
 import os
+from pathlib import Path
 import re
 import struct
 import subprocess
 import sys
-from pathlib import Path
 
 
 def validate(header, attributes, symbols, dynamic):
@@ -65,19 +65,22 @@ def uint_symbol(path, symbol, extra=0):
     raise ValueError('ABI metadata outside file-backed segments')
 
 
-def main():
-    if len(sys.argv) < 2:
-        print(f"Usage: {sys.argv[0]} <module.so> [rootfs_path]", file=sys.stderr)
+def main(argv=None):
+    args = sys.argv[1:] if argv is None else argv
+    if len(args) < 1:
+        print("Usage: primebox-verify-module <module.so> [rootfs_path]", file=sys.stderr)
         return 1
-    module = sys.argv[1]
+    module = args[0]
     cross = os.environ.get('CROSS', 'arm-linux-gnueabi-')
-    def run(tool, *args):
-        return subprocess.check_output([cross + tool, *args, module], text=True)
+
+    def run(tool, *subargs):
+        return subprocess.check_output([cross + tool, *subargs, module], text=True)
+
     header, attributes = run('readelf', '-h'), run('readelf', '-A')
     symbols, dynamic = run('objdump', '-T'), run('readelf', '-d')
     errors = validate(header, attributes, symbols, dynamic)
-    if len(sys.argv) > 2:
-        root = Path(sys.argv[2])
+    if len(args) > 1:
+        root = Path(args[1])
         expected = uint_symbol(root / 'usr/lib/libdirectfb-1.4.so.0', 'dfb_core_systems', 28)
         actual = uint_symbol(module, 'primebox_dfb_system_abi')
         if actual != expected:

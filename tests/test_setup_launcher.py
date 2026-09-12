@@ -1,4 +1,3 @@
-import importlib.util
 import io
 import os
 from pathlib import Path
@@ -9,21 +8,13 @@ import unittest
 from unittest.mock import patch
 import zipfile
 
-ROOT = Path(__file__).resolve().parents[1]
-LAUNCHER_TOOL = ROOT / 'tools/launcher/setup_launcher.py'
-
-
-def load_launcher_module():
-    spec = importlib.util.spec_from_file_location('setup_launcher', LAUNCHER_TOOL)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
+import primebox.launcher.setup_launcher as launcher_mod
 
 
 class SetupLauncherTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.launcher = load_launcher_module()
+        cls.launcher = launcher_mod
 
     def test_update_launcher_conf_empty(self):
         result = self.launcher.update_launcher_conf("")

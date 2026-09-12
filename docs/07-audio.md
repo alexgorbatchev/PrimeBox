@@ -28,7 +28,7 @@ scrolls, and jog/pitch do nothing. Four separate problems had to be fixed.
 (`0x700`) parsed from `/proc/cpuinfo`. On Rockchip it returns 0, so the device
 list is empty.
 
-**Patch** (in `rbp_patch.py`):
+**Patch** (in `src/primebox/patch/patch_rbp.py`):
 
 | VA | stock | patched | meaning |
 |---|---|---|---|

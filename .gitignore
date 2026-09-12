@@ -24,7 +24,6 @@ keys/*.bin
 # Pioneer / Denon binaries
 rbp
 rbp-*
-!tools/patch-rbp/**
 
 # --- Built shims / objects -------------------------------------------------
 *.o

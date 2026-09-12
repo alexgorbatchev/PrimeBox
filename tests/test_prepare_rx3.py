@@ -1,4 +1,3 @@
-import importlib.util
 import io
 import os
 from pathlib import Path, PurePosixPath
@@ -10,10 +9,7 @@ from unittest.mock import MagicMock, patch
 import zipfile
 import zlib
 
-ROOT = Path(__file__).resolve().parents[1]
-spec_prep = importlib.util.spec_from_file_location('prepare_rx3', ROOT / 'tools/bundle/prepare-rx3.py')
-prep = importlib.util.module_from_spec(spec_prep)
-spec_prep.loader.exec_module(prep)
+import primebox.bundle.prepare_rx3 as prep
 
 
 class PrepareRx3Tests(unittest.TestCase):
@@ -163,7 +159,7 @@ class PrepareRx3Tests(unittest.TestCase):
             out_dir_success = root / 'staging_success'
 
             # Test invalid gpl parts
-            with patch.object(prep.sys, 'argv', ['prepare-rx3.py', '--firmware', str(fw_zip), '--gpl', str(gpl0), str(gpl0), '--output', str(out_dir_fail)]):
+            with patch.object(prep.sys, 'argv', ['primebox-prepare', '--firmware', str(fw_zip), '--gpl', str(gpl0), str(gpl0), '--output', str(out_dir_fail)]):
                 with self.assertRaisesRegex(ValueError, 'both GPL source parts are required'):
                     prep.main()
 
@@ -187,7 +183,7 @@ class PrepareRx3Tests(unittest.TestCase):
                 return MagicMock(returncode=0)
 
             # Test full mock execution
-            with patch.object(prep.sys, 'argv', ['prepare-rx3.py', '--firmware', str(fw_zip), '--gpl', str(gpl0), str(gpl1), '--output', str(out_dir_success)]), \
+            with patch.object(prep.sys, 'argv', ['primebox-prepare', '--firmware', str(fw_zip), '--gpl', str(gpl0), str(gpl1), '--output', str(out_dir_success)]), \
                  patch('subprocess.run', side_effect=mock_unzip), \
                  patch.object(prep.AES, 'new') as mock_aes, \
                  patch('pycdlib.PyCdlib') as mock_pycdlib, \

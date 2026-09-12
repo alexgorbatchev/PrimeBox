@@ -42,9 +42,9 @@ It describes the one working design — not the dead ends along the way.
                     XDJ-RX3 firmware v1.20 (.UPD)
                               │
        ┌──────────────────────┴───────────────────────┐
-       │ 1. stage & decrypt (AES-256-CBC, cramfs, ISO) │  tools/bundle/prepare-rx3.py
+       │ 1. stage & decrypt (AES-256-CBC, cramfs, ISO) │  primebox-prepare
        │ 2. extract pdj/rbp  (ARM32, soft-float)       │
-       │ 3. apply interoperability patches             │  tools/patch-rbp
+       │ 3. apply interoperability patches             │  primebox-patch
        └──────────────────────┬───────────────────────┘
                               │  rbp-audio
                               ▼
@@ -70,13 +70,13 @@ Full instructions live in **[TUTORIAL.md](TUTORIAL.md)**. The short version:
 ./tools/get-firmware.sh ~/xdjrx3-fw        # download official firmware and GPL parts
 
 # 1. extract and stage RX3 userland (single pure-Python command)
-python3 tools/bundle/prepare-rx3.py \
+uv run primebox-prepare \
     --firmware ~/xdjrx3-fw/XDJ-RX3_v120.zip \
     --gpl ~/xdjrx3-fw/part00.zip ~/xdjrx3-fw/part01.zip \
     --output extracted/XDJRX3
 
 # 2. patch the player
-python3 tools/patch-rbp/rbp_patch.py extracted/XDJRX3/pdj/rbp -o extracted/rbp-audio
+uv run primebox-patch extracted/XDJRX3/pdj/rbp -o extracted/rbp-audio
 
 # 3. build the ARM32 shims (soft-float, glibc 2.13 ABI)
 make -C scripts/shims RX3="$PWD/extracted/XDJRX3/rootfs"
@@ -85,7 +85,7 @@ make -C scripts/shims RX3="$PWD/extracted/XDJRX3/rootfs"
 scp deploy/* root@YOUR_PRIMEGO:/data/
 
 # 5. configure boot launcher & auto-start remotely
-python3 tools/launcher/setup_launcher.py --remote root@YOUR_PRIMEGO --mode all
+uv run primebox-launcher --remote root@YOUR_PRIMEGO --mode all
 # (optional) test run immediately via SSH:
 ssh root@YOUR_PRIMEGO 'sh /data/start-rb.sh'
 ```
@@ -106,12 +106,16 @@ PrimeBox/
 ├── scripts/
 │   ├── device/               shell scripts that run on the Prime GO
 │   └── shims/                our LD_PRELOAD / translation shims (C)
-├── tests/                    unit tests for verification and device safety
+├── src/                      standard Python package (`primebox`)
+│   └── primebox/
+│       ├── bundle/           pure-Python firmware extractor / staging tool
+│       ├── launcher/         boot menu & auto-start configuration tool
+│       ├── patch/            rbp binary patcher
+│       └── verify/           DirectFB module & ELF link verification tools
+├── tests/                    unit tests with 100% exact assertion standards
 └── tools/
-    ├── bundle/               pure-Python firmware extractor / staging tool
-    ├── launcher/             boot menu & auto-start configuration tool
-    ├── patch-rbp/            rbp binary patcher + patch reference
-    └── build-directfb/       patched DirectFB fbdev module + verification tools
+    ├── build-directfb/       patched DirectFB fbdev module diff & compat shim
+    └── get-firmware.sh       firmware download helper
 ```
 
 ---
@@ -149,8 +153,8 @@ progress updates.
   their work this project would not exist.
 * **[@silonelnilo / PrimeBox_Prime2](https://github.com/silonelnilo/PrimeBox_Prime2)** —
   for contributing modern GLIBC 2.13 toolchain hardening (`legacy-scan.c`, 32-bit offset/time pinning),
-  chroot unmount safety guards (`fix-dev.sh`), ELF/DirectFB validation tooling (`verify-module.py`,
-  `verify-rx3-links.py`), and the pure-Python staging workflow (`prepare-rx3.py`).
+  chroot unmount safety guards (`fix-dev.sh`), ELF/DirectFB validation tooling (`primebox-verify-module`,
+  `primebox-verify-links`), and the pure-Python staging workflow (`primebox-prepare`).
 * Pioneer DJ / AlphaTheta — XDJ-RX3 and the GPL source distribution that made
   this research possible.
 * Denon DJ / inMusic — Prime GO hardware.

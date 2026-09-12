@@ -16,7 +16,7 @@ Use [`tools/get-firmware.sh`](../tools/get-firmware.sh) or download manually.
 Unzip to get `XDJ-RX3_v120/XDJ-RX3.UPD` (**69,171,216 bytes**, v1.20).
 
 > PrimeBox is developed against **v1.20**. Other versions may work but the
-> patch addresses in `tools/patch-rbp/` are specific to the v1.20 binary
+> patch addresses in `src/primebox/patch/` are specific to the v1.20 binary
 > (md5 `4f2efcfc0c9e3f539289f863acfddcc6`).
 
 ## 2. The key
@@ -75,12 +75,12 @@ CDJ-3000 key.
 > was the reference that led to the XDJ-RX3 cryptoloop analysis above. Many
 > thanks to them.
 
-## 4. Extract and stage with `prepare-rx3.py`
+## 4. Extract and stage with `primebox-prepare`
 
-PrimeBox provides a single pure-Python staging script (`tools/bundle/prepare-rx3.py`) that handles key recovery, AES-256-CBC decryption, ISO parsing, and userland decompression in one command without requiring root, Docker, or external tools:
+PrimeBox provides a single pure-Python staging command (`uv run primebox-prepare`) that handles key recovery, AES-256-CBC decryption, ISO parsing, and userland decompression in one command without requiring root, Docker, or external tools:
 
 ```bash
-python3 tools/bundle/prepare-rx3.py \
+uv run primebox-prepare \
     --firmware /path/to/XDJ-RX3_v120.zip \
     --gpl /path/to/pioneerdj_xdj_rx3.tar.bz2.00.zip /path/to/pioneerdj_xdj_rx3.tar.bz2.01.zip \
     --output extracted/XDJRX3
@@ -135,11 +135,11 @@ md5sum extracted/stock-rbp
 Patch the binary:
 
 ```bash
-python3 tools/patch-rbp/rbp_patch.py stock-rbp -o rbp-audio
+uv run primebox-patch stock-rbp -o rbp-audio
 md5sum rbp-audio
 # 3706c68f7242779d46afa09f35a39acf  rbp-audio
 ```
 
 See [10 — Memory map](10-memory-map.md) and
-[`tools/patch-rbp/PATCHES.md`](../tools/patch-rbp/PATCHES.md) for what each
+[12 — Patches](12-patches.md) for what each
 patch does.

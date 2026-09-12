@@ -3,8 +3,8 @@
 All addresses are for the **stock XDJ-RX3 v1.20 `rbp`** (non-PIE, load bias
 `0x8000`, so `file offset = VA − 0x8000`). Treat this as a quick lookup; the
 full instruction-level table is
-[`tools/patch-rbp/PATCHES.md`](../tools/patch-rbp/PATCHES.md) and is
-executable via [`tools/patch-rbp/rbp_patch.py`](../tools/patch-rbp/rbp_patch.py).
+[12 — Patches](12-patches.md) and is
+executable via `src/primebox/patch/patch_rbp.py` (`primebox-patch`).
 
 ## 1. Binary patches (by feature)
 

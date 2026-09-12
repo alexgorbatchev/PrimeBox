@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-rbp_patch.py - apply the PrimeBox interoperability patches to a stock
+patch_rbp.py - apply the PrimeBox interoperability patches to a stock
 XDJ-RX3 `rbp` binary.
 
 PrimeBox does NOT ship Pioneer/AlphaTheta binaries. You must extract
@@ -12,7 +12,7 @@ turn the stock `rbp` from firmware v1.20 into the "rbp-audio" build used
 by PrimeBox (display, touch, controls, USB and audio all working).
 
 Usage:
-    python3 rbp_patch.py <stock-rbp> [-o rbp-audio] [--check]
+    primebox-patch <stock-rbp> [-o rbp-audio] [--check]
 
     --check   only verify that the input already has / can take the patches;
               do not write an output file.
@@ -27,6 +27,7 @@ Notes:
 import argparse
 import struct
 import sys
+from typing import List, Optional, Tuple
 
 LOAD_BIAS = 0x8000
 
@@ -121,40 +122,56 @@ PATCHES = [
 ]
 
 
-def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__,
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("rbp", help="stock rbp binary extracted from the firmware")
-    ap.add_argument("-o", "--output", default="rbp-audio",
-                    help="output path (default: rbp-audio)")
-    ap.add_argument("--check", action="store_true",
-                    help="verify only, do not write anything")
-    args = ap.parse_args()
-
-    with open(args.rbp, "rb") as fh:
-        data = bytearray(fh.read())
-
-    applied = already = 0
-    for va, old, new, note in PATCHES:
+def apply_patches(data: bytearray, patches: Optional[List[Tuple[int, int, int, str]]] = None) -> Tuple[bytearray, int, int]:
+    """
+    Apply patches to binary data.
+    Returns (data, applied_count, already_count).
+    Raises ValueError on bounds or mismatch errors.
+    """
+    patch_list = patches if patches is not None else PATCHES
+    applied = 0
+    already = 0
+    for va, old, new, note in patch_list:
         off = va - LOAD_BIAS
         if off < 0 or off + 4 > len(data):
-            print(f"  !! VA 0x{va:06x} outside file", file=sys.stderr)
-            return 2
+            raise ValueError(f"VA 0x{va:06x} outside file bounds (offset {off})")
         cur = struct.unpack_from("<I", data, off)[0]
         if cur == new:
             already += 1
             continue
         if cur != old:
-            print(f"  !! mismatch at VA 0x{va:06x}: expected 0x{old:08x}, "
-                  f"found 0x{cur:08x}  ({note})", file=sys.stderr)
-            print("     wrong rbp version or already modified by another tool",
-                  file=sys.stderr)
-            return 2
+            raise ValueError(
+                f"mismatch at VA 0x{va:06x}: expected 0x{old:08x}, found 0x{cur:08x} ({note})"
+            )
         struct.pack_into("<I", data, off, new)
         applied += 1
 
-    print(f"[+] patches: {applied} applied, {already} already present, "
-          f"{len(PATCHES)} total")
+    return data, applied, already
+
+
+def main(argv: Optional[List[str]] = None) -> int:
+    ap = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    ap.add_argument("rbp", help="stock rbp binary extracted from the firmware")
+    ap.add_argument("-o", "--output", default="rbp-audio",
+                    help="output path (default: rbp-audio)")
+    ap.add_argument("--check", action="store_true",
+                    help="verify only, do not write anything")
+    args = ap.parse_args(argv)
+
+    with open(args.rbp, "rb") as fh:
+        data = bytearray(fh.read())
+
+    try:
+        data, applied, already = apply_patches(data)
+    except ValueError as e:
+        print(f"  !! {e}", file=sys.stderr)
+        print("     wrong rbp version or already modified by another tool", file=sys.stderr)
+        return 2
+
+    print(f"[+] patches: {applied} applied, {already} already present, {len(PATCHES)} total")
     if args.check:
         print("[i] --check only, no output written")
         return 0
@@ -166,4 +183,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    sys.exit(main())

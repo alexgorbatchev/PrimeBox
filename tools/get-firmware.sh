@@ -40,4 +40,4 @@ fi
 echo
 echo "Next:"
 echo "  1. download the GPL source parts from AlphaTheta (see keys/README.md)"
-echo "  2. run python3 tools/bundle/prepare-rx3.py --firmware $OUT --gpl <part00.zip> <part01.zip> --output extracted/XDJRX3"
+echo "  2. run uv run primebox-prepare --firmware $OUT --gpl <part00.zip> <part01.zip> --output extracted/XDJRX3"

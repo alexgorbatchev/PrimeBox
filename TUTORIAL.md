@@ -61,11 +61,11 @@ WORKSTATION$ ls -l keys/aes256.key     # must exist before the next step
 The decryption approach is derived from the pioneering work in
 [`nsaintot/cdj3k-emu`](https://github.com/nsaintot/cdj3k-emu/tree/main).
 PrimeBox runs the entire decryption, ISO unpacking, and cramfs decompression in a
-single command using [`tools/bundle/prepare-rx3.py`](tools/bundle/README.md)
+single command using `primebox-prepare`
 (no Rust compiler or Docker required):
 
 ```bash
-WORKSTATION$ python3 "$REPO/tools/bundle/prepare-rx3.py" \
+WORKSTATION$ uv run primebox-prepare \
     --firmware ~/xdjrx3-fw/XDJ-RX3_v120.zip \
     --gpl ~/xdjrx3-fw/pioneerdj_xdj_rx3.tar.bz2.00.zip ~/xdjrx3-fw/pioneerdj_xdj_rx3.tar.bz2.01.zip \
     --output "$REPO/extracted/XDJRX3"
@@ -97,7 +97,7 @@ WORKSTATION$ cp extracted/XDJRX3/pdj/rbp extracted/stock-rbp
 WORKSTATION$ md5sum extracted/stock-rbp
 # 4f2efcfc0c9e3f539289f863acfddcc6  extracted/stock-rbp
 
-WORKSTATION$ python3 tools/patch-rbp/rbp_patch.py \
+WORKSTATION$ uv run primebox-patch \
     extracted/stock-rbp -o extracted/rbp-audio
 WORKSTATION$ md5sum extracted/rbp-audio
 # 3706c68f7242779d46afa09f35a39acf  extracted/rbp-audio
@@ -114,7 +114,7 @@ WORKSTATION$ make -C scripts/shims RX3="$PWD/extracted/XDJRX3-rootfs" check
 You can also run automated link and module validation:
 
 ```bash
-WORKSTATION$ python3 tools/build-directfb/verify-rx3-links.py \
+WORKSTATION$ uv run primebox-verify-links \
     extracted/XDJRX3-rootfs scripts/shims/*.so
 ```
 
@@ -124,7 +124,7 @@ Follow [`tools/build-directfb/README.md`](tools/build-directfb/README.md). You c
 verify the resulting module using:
 
 ```bash
-WORKSTATION$ python3 tools/build-directfb/verify-module.py \
+WORKSTATION$ uv run primebox-verify-module \
     deploy/libdirectfb_fbdev-rot16.so extracted/XDJRX3-rootfs
 ```
 
@@ -288,7 +288,7 @@ You can configure on-screen touch booting and USB insertion auto-start directly 
 Run the Python setup tool targeting the Prime GO over SSH:
 
 ```bash
-WORKSTATION$ python3 tools/launcher/setup_launcher.py --remote root@YOUR_PRIMEGO --mode all
+WORKSTATION$ uv run primebox-launcher --remote root@YOUR_PRIMEGO --mode all
 ```
 
 This automatically:
@@ -301,7 +301,7 @@ This automatically:
 Or stage the files into your local `deploy/` directory before copying:
 
 ```bash
-WORKSTATION$ python3 tools/launcher/setup_launcher.py --root deploy/ --mode all
+WORKSTATION$ uv run primebox-launcher --root deploy/ --mode all
 WORKSTATION$ scp -r deploy/* root@YOUR_PRIMEGO:/data/
 ```
 

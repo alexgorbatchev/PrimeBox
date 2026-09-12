@@ -19,6 +19,6 @@ extracted/
 The patched player and the built shims are produced from these files:
 
 ```
-rbp-audio                   python3 tools/patch-rbp/rbp_patch.py stock-rbp -o rbp-audio
+rbp-audio                   uv run primebox-patch stock-rbp -o rbp-audio
 scripts/shims/*.so          make -C scripts/shims RX3=$PWD/extracted/XDJRX3-rootfs
 ```

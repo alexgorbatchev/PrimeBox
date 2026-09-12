@@ -120,7 +120,7 @@ load-bearing**:
 ## 4. `rbp` patches required for touch
 
 Three firmware-level problems are fixed by
-[`tools/patch-rbp/rbp_patch.py`](../tools/patch-rbp/rbp_patch.py):
+`src/primebox/patch/patch_rbp.py` (`primebox-patch`):
 
 1. **Browse-caution gate.** While any modal caution is active,
    `Pub_Total_GetBrowseDispMessage()` returns non-zero and both

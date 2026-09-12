@@ -27,12 +27,13 @@ def inspect(path):
     return re.findall(r'\(NEEDED\).*\[(.*?)\]', dynamic), exports, imports
 
 
-def main():
-    if len(sys.argv) < 3:
-        print(f"Usage: {sys.argv[0]} <rootfs_path> <binary_or_library...>", file=sys.stderr)
+def main(argv=None):
+    args = sys.argv[1:] if argv is None else argv
+    if len(args) < 2:
+        print("Usage: primebox-verify-links <rootfs_path> <binary_or_library...>", file=sys.stderr)
         return 1
-    root = Path(sys.argv[1]).resolve()
-    pending = [Path(p).resolve() for p in sys.argv[2:]]
+    root = Path(args[0]).resolve()
+    pending = [Path(p).resolve() for p in args[1:]]
     checked, exports = {}, set()
     while pending:
         path = pending.pop()
