@@ -279,27 +279,37 @@ PRIMEGO# cat /data/usbwatch.log
 
 ---
 
-## Part D — Boot menu & Headless Launch
+## Part D — Boot menu & Launch Automation
 
-### Option 1: Touchscreen Boot Menu (Units with RetroGo mod)
+You can configure on-screen touch booting and/or USB insertion auto-start using the Python setup tool:
 
-If your unit has the third-party RetroGo / homebrew touch launcher installed (`/data/launcher`), add `start-rb.sh` to the config (`/data/launcher.conf`):
+```bash
+# Option A: Automatic setup (configures /data/launcher.conf and installs udev auto-start rules)
+PRIMEGO# python3 /data/setup_launcher.py --mode all
+
+# Option B: Install RetroGo package if /data/launcher is not yet present:
+PRIMEGO# python3 /data/setup_launcher.py --install-retrogo --package /path/to/retrogo.zip
+```
+
+### Manual Configuration
+
+If modifying `/data/launcher.conf` manually on units with RetroGo installed:
 
 ```
 # DJ Apps
+ENGINE |
 REKORDBOX (XDJ-RX3) | /data/start-rb.sh
 
 # RetroGo Launcher
 ...
-BACK TO ENGINE |
 ```
 
 `start-rb.sh` runs in the foreground for the lifetime of `rbp`, so the launcher
 does not redraw over it, and it cleans up the daemons when `rbp` exits.
 
-### Option 2: Headless / Stock Launch (Untested on hardware)
+### Headless / Stock USB Auto-Launch (Untested on hardware)
 
-For units without the RetroGo boot menu, several headless launch approaches (such as USB auto-launch on `export.pdb` detection or MIDI button chords) are outlined in [docs/09-runtime-launcher.md](docs/09-runtime-launcher.md#32-alternative-standalone-launch-approaches-untested-on-hardware). *Note: these alternative methods have not yet been validated on physical hardware.*
+For units on stock firmware without the RetroGo boot menu, running `setup_launcher.py --mode udev` installs the USB auto-start rule. Inserting a Rekordbox USB drive (`export.pdb`) will automatically launch PrimeBox. Additional designs (such as boot-time MIDI button chords) are detailed in [docs/09-runtime-launcher.md](docs/09-runtime-launcher.md#32-alternative-standalone-launch-approaches-untested-on-hardware).
 
 ---
 

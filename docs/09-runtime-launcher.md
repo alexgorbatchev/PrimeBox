@@ -57,15 +57,20 @@ There are several ways to launch PrimeBox on the Prime GO without relying on an 
 
 Units running the third-party **RetroGo / Denon Homebrew** mod utilize a framebuffer menu launcher binary (`/data/launcher`) driven by `soundswitch.service` on boot. It reads `/data/launcher.conf`.
 
-PrimeBox ships `scripts/device/launcher.conf` with a pre-configured entry:
+PrimeBox ships `scripts/device/launcher.conf` with a pre-configured entry, and provides an automated setup tool (`tools/launcher/setup_launcher.py`) that idempotently updates `/data/launcher.conf` without overwriting other homebrew apps:
+
+```bash
+# On device or staging root:
+python3 tools/launcher/setup_launcher.py --mode retrogo
+```
 
 ```
 # DJ Apps
+ENGINE |
 REKORDBOX (XDJ-RX3) | /data/start-rb.sh
 
 # RetroGo Launcher
 ...
-BACK TO ENGINE |
 ```
 
 `start-rb.sh` runs in the foreground for as long as `rbp` lives, so the launcher does not fight `rbp` for `/dev/fb0`. When `rbp` exits, cleanup runs and the menu returns.

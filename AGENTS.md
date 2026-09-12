@@ -4,6 +4,7 @@ Pioneer DJ XDJ-RX3 rekordbox standalone player (`rbp`) interoperability and hard
 
 ## Commands
 - Pure Python staging pipeline: `python3 tools/bundle/prepare-rx3.py --firmware <XDJRX3.zip> --gpl <part00.zip> <part01.zip> --output <staging_dir>`
+- Configure device launcher & auto-start: `python3 tools/launcher/setup_launcher.py [--root <dir>] [--mode retrogo|udev|all] [--install-retrogo]`
 - Apply interoperability patches: `python3 tools/patch-rbp/rbp_patch.py extracted/stock-rbp -o extracted/rbp-audio`
 - Build ARM32 soft-float translation shims: `make -C scripts/shims RX3="$PWD/extracted/XDJRX3-rootfs"`
 - Verify shim GLIBC symbols & soft-float ABI: `make -C scripts/shims RX3="$PWD/extracted/XDJRX3-rootfs" check`
