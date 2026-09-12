@@ -5,8 +5,9 @@ Workstation-side tooling. Nothing here runs on the Prime GO.
 | Tool | Language | Purpose |
 |---|---|---|
 | [`rx3dec/`](rx3dec/) | Rust | decrypt XDJ-RX3 `.UPD` → ISO 9660 image |
+| [`bundle/`](bundle/) | Python | pure-Python all-in-one staging pipeline (`prepare-rx3.py`) |
 | [`patch-rbp/`](patch-rbp/) | Python | apply PrimeBox interoperability patches to `rbp` |
-| [`build-directfb/`](build-directfb/) | C / patch | patched DirectFB 1.4 fbdev module for the Rockchip fb |
+| [`build-directfb/`](build-directfb/) | C / patch / Python | patched DirectFB 1.4 fbdev module + verification tooling |
 | [`get-firmware.sh`](get-firmware.sh) | shell | download the official XDJ-RX3 v1.20 firmware |
 
 ## Suggested order

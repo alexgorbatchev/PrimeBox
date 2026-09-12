@@ -73,6 +73,8 @@ WORKSTATION$ ./target/release/rx3dec \
 
 Expect `[+] OK: ISO 9660 signature CD001 found at sector 64`.
 
+> **Tip (Alternative Pure-Python Extraction):** You can also run `python3 tools/bundle/prepare-rx3.py --firmware <XDJRX3.zip> --gpl <part00.zip> <part01.zip> --output extracted/staging` to perform key recovery, decryption, and cramfs extraction in a single command without Rust or Docker. See [`tools/bundle/README.md`](tools/bundle/README.md).
+
 ### A3. Extract the ISO
 
 ```bash

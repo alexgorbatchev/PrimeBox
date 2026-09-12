@@ -39,6 +39,13 @@ scripts/shims/udplog
 target/
 Cargo.lock
 
+# --- Python / tooling junk -------------------------------------------------
+.venv/
+__pycache__/
+*.py[cod]
+.coverage
+htmlcov/
+
 # --- OS / editor / tooling junk --------------------------------------------
 .DS_Store
 Thumbs.db

@@ -53,6 +53,10 @@ descriptive, nominative sense only.
   thanks to this project for demonstrating how Pioneer `.UPD` firmware images
   are decrypted (its `tools/upd-decrypt` LUKS keyfile + `losetup` helper). That
   work is the reference this project's `rx3dec` builds on.
+* **[@silonelnilo](https://github.com/silonelnilo/PrimeBox_Prime2)** —
+  thanks for contributing modern GLIBC 2.13 toolchain hardening (`legacy-scan.c`, 32-bit time/offset pinning),
+  device chroot mountpoint safety guards (`fix-dev.sh`), ELF and DirectFB verification tooling
+  (`verify-module.py`, `verify-rx3-links.py`), and the pure-Python staging pipeline (`prepare-rx3.py`).
 
 ## Third-party components
 

@@ -72,10 +72,12 @@ soft-float.
 
 ### Bind mounts (run after every reboot)
 
-`scripts/device/fix-dev.sh` recreates everything:
+`scripts/device/fix-dev.sh` recreates everything safely:
 
 ```sh
-umount /data/rbx3-run/dev 2>/dev/null; rm -rf /data/rbx3-run/dev
+if mountpoint -q /data/rbx3-run/dev; then
+  umount /data/rbx3-run/dev
+fi
 mkdir -p /data/rbx3-run/dev
 mount --bind /dev  /data/rbx3-run/dev
 mount --bind /proc /data/rbx3-run/proc

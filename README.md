@@ -103,10 +103,12 @@ PrimeBox/
 ├── scripts/
 │   ├── device/               shell scripts that run on the Prime GO
 │   └── shims/                our LD_PRELOAD / translation shims (C)
+├── tests/                    unit tests for verification and device safety
 └── tools/
     ├── rx3dec/               .UPD → ISO decryptor (Rust)
+    ├── bundle/               pure-Python firmware extractor / staging tool
     ├── patch-rbp/            rbp binary patcher + patch reference
-    └── build-directfb/       patched DirectFB fbdev module + diff
+    └── build-directfb/       patched DirectFB fbdev module + verification tools
 ```
 
 ---
@@ -142,6 +144,10 @@ progress updates.
   `.UPD` firmware images are decrypted (LUKS keyfile → losetup/cryptsetup),
   which is what put us on the path to the XDJ-RX3 cryptoloop scheme. Without
   their work this project would not exist.
+* **[@silonelnilo / PrimeBox_Prime2](https://github.com/silonelnilo/PrimeBox_Prime2)** —
+  for contributing modern GLIBC 2.13 toolchain hardening (`legacy-scan.c`, 32-bit offset/time pinning),
+  chroot unmount safety guards (`fix-dev.sh`), ELF/DirectFB validation tooling (`verify-module.py`,
+  `verify-rx3-links.py`), and the pure-Python staging workflow (`prepare-rx3.py`).
 * Pioneer DJ / AlphaTheta — XDJ-RX3 and the GPL source distribution that made
   this research possible.
 * Denon DJ / inMusic — Prime GO hardware.

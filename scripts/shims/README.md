@@ -18,6 +18,14 @@ The resulting libraries must reference **only** `GLIBC_2.4`/`GLIBC_2.7`. If you
 see `GLIBC_2.17` (typically `clock_gettime`) or `GLIBC_2.34` (`dlopen`), you
 linked against the host glibc. `make check` catches this.
 
+## `legacy-scan.c`
+
+Compatibility translation unit linked into `knobshim2.so`. When building with
+GCC 13+ and modern host glibc headers (which redirect standard `strtol` and
+`sscanf` calls to pre-C23/C23 symbols like `__isoc23_strtol` / `__isoc23_sscanf`),
+`legacy-scan.c` preserves legacy glibc 2.13 entry point names so the shims load
+cleanly on the target device.
+
 ## `knobshim2.c` → `knobshim.so`
 
 The largest shim. On `rbp` startup it waits for `ui::KeyManager` to exist,

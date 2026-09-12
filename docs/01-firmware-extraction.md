@@ -162,7 +162,7 @@ ls extracted/XDJRX3-gui/system/fontdata/ # *.ttf
 
 ### The rootfs (runtime + `edb_streamd`)
 
-`rootfs.cramfs` is a cramfs image. Many kernels cannot mount cramfs; use
+`rootfs.cramfs` is a cramfs image. Many modern host kernels cannot mount cramfs; you can use
 `fusecram` in a container:
 
 ```bash
@@ -175,6 +175,27 @@ docker run --rm --privileged \
     mkdir -p /mnt/r && fusecram /in/r.cramfs /mnt/r & sleep 4
     cp -a /mnt/r/. /out/'
 ```
+
+---
+
+## 6. Alternative: Pure Python All-in-One Staging Pipeline
+
+If you prefer not to use Rust, Docker, or root mounts, you can use the pure-Python staging script at [`tools/bundle/prepare-rx3.py`](../tools/bundle/README.md).
+
+### Prerequisites:
+```bash
+uv pip install pycryptodome pycdlib
+```
+
+### Run staging:
+```bash
+python3 tools/bundle/prepare-rx3.py \
+    --firmware /path/to/XDJ-RX3_v120.zip \
+    --gpl /path/to/pioneerdj_xdj_rx3.tar.bz2.00.zip /path/to/pioneerdj_xdj_rx3.tar.bz2.01.zip \
+    --output extracted/staging
+```
+
+This single command extracts the decryption key, decrypts the `.UPD` image, parses the ISO, and decompresses the `cramfs` rootfs directly in userland.
 
 From the rootfs you need, at minimum:
 

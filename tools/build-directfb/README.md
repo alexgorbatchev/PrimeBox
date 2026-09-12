@@ -119,6 +119,15 @@ for s in libdirect-1.4.so.6 libfusion-1.4.so.6 libdirectfb-1.4.so.6; do
 done
 ```
 
+## Validation
+
+Verify the compiled module against the RX3 rootfs using the automated validator:
+
+```bash
+python3 tools/build-directfb/verify-module.py \
+    systems/fbdev/.libs/libdirectfb_fbdev.so "$RX3"
+```
+
 ## Deploy
 
 ```
