@@ -81,8 +81,12 @@ python3 tools/patch-rbp/rbp_patch.py extracted/XDJRX3/pdj/rbp -o extracted/rbp-a
 # 3. build the ARM32 shims (soft-float, glibc 2.13 ABI)
 make -C scripts/shims RX3="$PWD/extracted/XDJRX3/rootfs"
 
-# 4. copy the payload to the Prime GO and run the launcher
+# 4. copy the payload to the Prime GO
 scp deploy/* root@YOUR_PRIMEGO:/data/
+
+# 5. configure boot launcher & auto-start (on Prime GO)
+ssh root@YOUR_PRIMEGO 'python3 /data/setup_launcher.py --mode all'
+# (optional) test run immediately via SSH:
 ssh root@YOUR_PRIMEGO 'sh /data/start-rb.sh'
 ```
 
@@ -105,6 +109,7 @@ PrimeBox/
 ├── tests/                    unit tests for verification and device safety
 └── tools/
     ├── bundle/               pure-Python firmware extractor / staging tool
+    ├── launcher/             boot menu & auto-start configuration tool
     ├── patch-rbp/            rbp binary patcher + patch reference
     └── build-directfb/       patched DirectFB fbdev module + verification tools
 ```
