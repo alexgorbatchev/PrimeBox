@@ -18,6 +18,35 @@ Pioneer DJ XDJ-RX3 rekordbox standalone player (`rbp`) interoperability and hard
 - Build & Python tools: `autoconf`, `automake`, `libtool`, `patchelf`, `unzip` (Deflate64), `pycryptodome`, `pycdlib`.
 - Firmware update image: Official XDJ-RX3 v1.20 `.UPD` (SHA256: `e81f34ef300c5faa7faf4b4c436eaaf1476d407447b2dbb845c7fbddb4f51389`).
 
+## Denon DJ Prime GO Target Platform Architecture
+
+### 1. Hardware Specifications & SoC
+- **SoC:** Rockchip RK3288 (Quad-Core ARM Cortex-A17 @ 1.4–1.8 GHz, ARMv7-A with NEON).
+- **Float ABI:** Hard-float kernel (`armhf`), but kernel transparently executes ARM32 soft-float (`armel` EABI5) binaries.
+- **Memory & Storage:** 2 GB LPDDR3 RAM. Root filesystem is a ~466 MB read-only SquashFS partition; `/data` (ext4) is persistent (~2 GB free); `/tmp` is a tmpfs (wiped on reboot).
+- **Display Panel:** 7.0-inch 800×1280 portrait MIPI-DSI LCD, 32-bit ARGB/XRGB DRM framebuffer (`/dev/fb0`, `rockchipdrmfb`), triple-buffered.
+- **Touch Controller:** ILI2117 capacitive touch controller providing evdev multi-touch events on `/dev/input/event0`.
+- **Audio Subsystem:** Integrated `JP11` 4-channel audio codec on ALSA `hw:1,0` (channels 0/1 = Master output, channels 2/3 = Headphones/Cue).
+- **Control Surface:** Dedicated USB MIDI surface (`15e4:800c`, "PRIME GO Control Surface") attached to ALSA sequencer client `16:0` (requires active ALSA sequencer subscription to stream events).
+- **Storage Ports:** Exactly 1 rear USB-A 2.0 host port (sysfs `usb3`/`usb4` EHCI/OHCI pair, `/dev/sda`), 1 internal USB-B OTG computer port, 1 SD card slot.
+
+### 2. Software Environment & Runtime Capabilities
+- **Operating System:** Engine OS (Buildroot 2023.02.11 base) with Linux 6.1.111-inmusic PREEMPT_RT kernel and `systemd`.
+- **Target Userland:** BusyBox `/bin/sh` and POSIX utilities only. **No Python runtime**, no compiler, no package manager on the device.
+- **Networking:** Wi-Fi (802.11abgn/ac) and 100/1000M Ethernet. Local root SSH access on port 22 (no outbound internet access on device).
+- **Core Engine Daemons:**
+  - `engine.service`: Stock Denon DJ UI application (holds exclusive locks on `/dev/fb0` and ALSA `hw:1,0`).
+  - `edisksd.service`: Denon disk daemon (resets and unmounts storage devices not registered with Engine OS).
+  - `soundswitch.service`: SoundSwitch lighting daemon (used as boot execution vector for `/data/launcher`).
+  - `enginestream.service`: Background network streaming audio daemon.
+
+### 3. Hardware Mismatches & Translation Layer
+- **Display Orientation & Depth:** XDJ-RX3 renders 1280×800 landscape RGB565; Prime GO has an 800×1280 portrait RGB32 panel. Rebuilt DirectFB `libdirectfb_fbdev.so` rotates output 90° CCW and converts RGB565 to RGB32.
+- **Touchscreen Interface:** XDJ-RX3 expects TSC2007 resistive touch on `/dev/tsc2007_2-0048`; Prime GO provides ILI2117 capacitive evdev. `fbshim-tsc.so` translates evdev events into the synthesized TSC2007 protocol.
+- **Audio Output:** XDJ-RX3 expects 3 discrete CS4344 DACs; Prime GO uses a single 4-channel `hw:1,0` ALSA PCM. `audioshim.so` multiplexes Master and Headphone streams onto `hw:1,0`.
+- **Controls & MIDI:** XDJ-RX3 reads keycodes from Pioneer microcontrollers over SPI; Prime GO sends raw MIDI over ALSA sequencer `16:0`. `knobshim2.so` subscribes to sequencer `16:0` and injects virtual key events into `rbp`'s `KeyManager`.
+- **Single USB Port:** Prime GO has only 1 host port. Phantom USB 2 is suppressed in memory (`uiConnectedMedia = 0x2`).
+
 ## Conventions
 - **GLIBC Target Baseline:** All shims and compiled shared libraries MUST reference only `GLIBC_2.4` / `GLIBC_2.7` symbols to run under the soft-float glibc-2.13 target userland.
 - **Modern Host Toolchain Flag Guard:** When compiling with GCC 13+ / glibc 2.38+ headers, always supply `-U_FILE_OFFSET_BITS -D_FILE_OFFSET_BITS=32 -U_TIME_BITS -D_TIME_BITS=32 -fno-stack-protector` and link `legacy-scan.c` to avoid pulling unversioned `__isoc23_*` or 64-bit time symbols.
