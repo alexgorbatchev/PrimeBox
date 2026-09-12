@@ -11,7 +11,6 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 LAUNCHER_TOOL = ROOT / 'tools/launcher/setup_launcher.py'
-SHELL_SETUP_SCRIPT = ROOT / 'scripts/device/setup-launcher.sh'
 
 
 def load_launcher_module():
@@ -242,11 +241,6 @@ class SetupLauncherTests(unittest.TestCase):
                 ret = self.launcher.main()
                 self.assertEqual(ret, 0)
                 self.assertEqual((root / "data/launcher").read_bytes(), launcher_data)
-
-    def test_sh_script_syntax_and_execution(self):
-        # 1. Syntax check
-        res = subprocess.run(['sh', '-n', str(SHELL_SETUP_SCRIPT)], capture_output=True, text=True)
-        self.assertEqual(res.returncode, 0, f"Syntax error in setup-launcher.sh: {res.stderr}")
 
     def test_setup_launcher_remote_all_modes_exact(self):
         remote_state = {

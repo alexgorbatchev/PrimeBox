@@ -61,6 +61,7 @@ Pioneer DJ XDJ-RX3 rekordbox standalone player (`rbp`) interoperability and hard
 
 ## Boundaries
 - Always: automatically record all new user instructions in the most appropriate `AGENTS.md` file immediately upon receipt (check with user if existing instructions conflict).
+- Always: never leave dead, deprecated, or superseded code, scripts, or documentation in the repository; prune them immediately.
 - Always: clearly document launcher prerequisites (e.g. RetroGo / soundswitch menu mods vs stock units) and outline headless launch options (USB auto-detection, hardware button chords), explicitly noting when designs have not yet been validated on physical hardware.
 - Always (code-based projects only): any time code is changed such that results from running that code are changed, a test file must be changed as well; 90% code coverage is required (`scripts/` folder is excluded from this rule).
 - Always: STRICT PROHIBITION against string sampling in unit tests. All generated configuration files, scripts, udev rules, templates, and command payloads MUST be asserted with complete, 100% exact full-string or structural equality (never loose `assertIn`, substring, or partial sampling checks for generated files or text).
