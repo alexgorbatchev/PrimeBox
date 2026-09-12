@@ -20,25 +20,6 @@ import zipfile
 DEFAULT_LAUNCHER_CONF = """# DJ Apps
 ENGINE |
 REKORDBOX (XDJ-RX3) | /data/start-rb.sh
-
-# RetroGo Launcher
-STREAM+ | bg/systemctl start enginestream.service
-DOOM | /data/doomprimego
-
-# Game Boy
-TETRIS | /data/retrogo.sh /data/cores/gearboy_libretro.so "Tetris (World) (Rev 1).gb"
-SUPER MARIO LAND | /data/retrogo.sh /data/cores/gearboy_libretro.so "Super Mario Land (World).gb"
-POKEMON RED | /data/retrogo.sh /data/cores/gearboy_libretro.so "Pokemon - Red Version (USA, Europe) (SGB Enhanced).gb"
-
-# SNES
-SUPER MARIO WORLD | /data/retrogo.sh /data/cores/snes9x_libretro.so /data/roms/snes/Super\\ Mario\\ World\\ -\\ The\\ Definitive\\ Edition\\ v1.2.sfc
-STREET FIGHTER II | /data/retrogo.sh /data/cores/snes9x_libretro.so /data/roms/snes/Street\\ Fighter\\ II\\ \\(USA\\).sfc
-STREET FIGHTER II TURBO | /data/retrogo.sh /data/cores/snes9x_libretro.so /data/roms/snes/Street\\ Fighter\\ II\\ Turbo\\ \\(Europe\\).sfc
-
-# PSX
-TEKKEN 3 | /data/retrogo.sh /data/cores/pcsx_rearmed_libretro.so /data/roms/psx/Tekken\\ 3\\ \\(Europe\\,\\ Australia\\).cue
-
-RETROARCH MENU | /data/retrogo.sh
 """
 
 

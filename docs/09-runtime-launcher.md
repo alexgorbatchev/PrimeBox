@@ -71,9 +71,6 @@ python3 tools/launcher/setup_launcher.py --root deploy/ --mode retrogo
 # DJ Apps
 ENGINE |
 REKORDBOX (XDJ-RX3) | /data/start-rb.sh
-
-# RetroGo Launcher
-...
 ```
 
 `start-rb.sh` runs in the foreground for as long as `rbp` lives, so the launcher does not fight `rbp` for `/dev/fb0`. When `rbp` exits, cleanup runs and the menu returns.

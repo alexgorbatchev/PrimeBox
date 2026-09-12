@@ -313,9 +313,6 @@ If modifying `/data/launcher.conf` manually on units with RetroGo installed:
 # DJ Apps
 ENGINE |
 REKORDBOX (XDJ-RX3) | /data/start-rb.sh
-
-# RetroGo Launcher
-...
 ```
 
 `start-rb.sh` runs in the foreground for the lifetime of `rbp`, so the launcher

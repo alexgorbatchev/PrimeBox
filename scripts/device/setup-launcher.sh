@@ -11,12 +11,6 @@ if [ ! -f /data/launcher.conf ]; then
 # DJ Apps
 ENGINE |
 REKORDBOX (XDJ-RX3) | /data/start-rb.sh
-
-# RetroGo Launcher
-STREAM+ | bg/systemctl start enginestream.service
-DOOM | /data/doomprimego
-
-RETROARCH MENU | /data/retrogo.sh
 EOF
     echo "  - Created /data/launcher.conf"
 else
