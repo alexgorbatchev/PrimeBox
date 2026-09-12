@@ -242,6 +242,85 @@ def setup_launcher(
     return results
 
 
+def ssh_run(target: str, cmd: str, input_data: Optional[str] = None) -> Any:
+    """Execute command over SSH."""
+    import subprocess
+    proc = subprocess.run(
+        ["ssh", "-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=no", target, cmd],
+        input=input_data,
+        capture_output=True,
+        text=True,
+    )
+    return proc.returncode, proc.stdout, proc.stderr
+
+
+def setup_launcher_remote(
+    target: str,
+    mode: str = "all",
+    install_package: bool = False,
+    package_source: Optional[str] = None,
+    dry_run: bool = False,
+    agent_mode: bool = False,
+    runner: Optional[Any] = None,
+) -> Dict[str, Any]:
+    """Configure boot menu launcher, RetroGo, and/or udev rules remotely over SSH."""
+    run = runner or ssh_run
+    results: Dict[str, Any] = {
+        "launcher_conf_updated": False,
+        "retrogo_installed": False,
+        "udev_rule_created": False,
+        "usb_script_created": False,
+        "files_modified": [],
+    }
+
+    if install_package:
+        code, _, _ = run(target, "test -f /data/launcher")
+        if code != 0 and package_source:
+            # Package extraction over SSH
+            if not dry_run:
+                if package_source.startswith("http://") or package_source.startswith("https://"):
+                    req = urllib.request.urlopen(package_source)
+                    pkg_data = req.read()
+                else:
+                    pkg_data = Path(package_source).read_bytes()
+
+                # Upload archive and extract
+                run(target, "mkdir -p /data && tar -xz -C /data/ 2>/dev/null || unzip -o -d /data/ - 2>/dev/null", input_data=pkg_data.decode("latin1", errors="ignore"))
+                run(target, "chmod 755 /data/launcher 2>/dev/null || true")
+
+            results["retrogo_installed"] = True
+            results["files_modified"].append(f"{target}:/data/launcher")
+
+        override_content = generate_soundswitch_override()
+        results["files_modified"].append(f"{target}:/etc/systemd/system/soundswitch.service.d/override.conf")
+        if not dry_run:
+            run(target, "mkdir -p /etc/systemd/system/soundswitch.service.d && cat > /etc/systemd/system/soundswitch.service.d/override.conf", input_data=override_content)
+            run(target, "systemctl daemon-reload 2>/dev/null || true")
+
+    if mode in ("all", "retrogo"):
+        code, stdout, _ = run(target, "cat /data/launcher.conf 2>/dev/null || true")
+        new_content = update_launcher_conf(stdout)
+        results["launcher_conf_updated"] = True
+        results["files_modified"].append(f"{target}:/data/launcher.conf")
+        if not dry_run and (new_content != stdout or code != 0):
+            run(target, "cat > /data/launcher.conf", input_data=new_content)
+
+    if mode in ("all", "udev"):
+        rule_content = generate_udev_rule()
+        results["udev_rule_created"] = True
+        results["files_modified"].append(f"{target}:/etc/udev/rules.d/99-primebox.rules")
+        if not dry_run:
+            run(target, "mkdir -p /etc/udev/rules.d && cat > /etc/udev/rules.d/99-primebox.rules && udevadm control --reload-rules 2>/dev/null || true", input_data=rule_content)
+
+        script_content = generate_usb_check_script()
+        results["usb_script_created"] = True
+        results["files_modified"].append(f"{target}:/data/check-and-launch-rb.sh")
+        if not dry_run:
+            run(target, "cat > /data/check-and-launch-rb.sh && chmod 755 /data/check-and-launch-rb.sh", input_data=script_content)
+
+    return results
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Configure PrimeBox launcher, RetroGo, and auto-start on Denon Prime GO."
@@ -250,7 +329,13 @@ def main() -> int:
         "--root",
         type=Path,
         default=Path("/"),
-        help="Target root directory (default: /)",
+        help="Target local root directory (default: /)",
+    )
+    parser.add_argument(
+        "--remote",
+        type=str,
+        default=None,
+        help="Target remote SSH host (e.g. root@192.168.1.100)",
     )
     parser.add_argument(
         "--mode",
@@ -278,14 +363,24 @@ def main() -> int:
     args = parser.parse_args()
     agent_mode = is_agent_mode()
 
-    res = setup_launcher(
-        root_dir=args.root,
-        mode=args.mode,
-        install_package=args.install_retrogo,
-        package_source=args.package,
-        dry_run=args.dry_run,
-        agent_mode=agent_mode,
-    )
+    if args.remote:
+        res = setup_launcher_remote(
+            target=args.remote,
+            mode=args.mode,
+            install_package=args.install_retrogo,
+            package_source=args.package,
+            dry_run=args.dry_run,
+            agent_mode=agent_mode,
+        )
+    else:
+        res = setup_launcher(
+            root_dir=args.root,
+            mode=args.mode,
+            install_package=args.install_retrogo,
+            package_source=args.package,
+            dry_run=args.dry_run,
+            agent_mode=agent_mode,
+        )
 
     if agent_mode:
         print(f"STATUS: SUCCESS")
