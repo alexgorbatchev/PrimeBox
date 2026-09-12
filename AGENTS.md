@@ -63,6 +63,7 @@ Pioneer DJ XDJ-RX3 rekordbox standalone player (`rbp`) interoperability and hard
 - Always: automatically record all new user instructions in the most appropriate `AGENTS.md` file immediately upon receipt (check with user if existing instructions conflict).
 - Always: clearly document launcher prerequisites (e.g. RetroGo / soundswitch menu mods vs stock units) and outline headless launch options (USB auto-detection, hardware button chords), explicitly noting when designs have not yet been validated on physical hardware.
 - Always (code-based projects only): any time code is changed such that results from running that code are changed, a test file must be changed as well; 90% code coverage is required (`scripts/` folder is excluded from this rule).
+- Always: STRICT PROHIBITION against string sampling in unit tests. All generated configuration files, scripts, udev rules, templates, and command payloads MUST be asserted with complete, 100% exact full-string or structural equality (never loose `assertIn`, substring, or partial sampling checks for generated files or text).
 - Always: run `make -C scripts/shims check` after modifying any shim C code to verify zero hard-float tags and strict `GLIBC_2.4` linkage.
 - Ask first: structural changes to memory patch offsets in `tools/patch-rbp/rbp_patch.py` or DirectFB rotation logic in `tools/build-directfb/directfb-full.diff`.
 - Never: publish releases, tags, packages, or production deployments automatically without explicit user authorization.
