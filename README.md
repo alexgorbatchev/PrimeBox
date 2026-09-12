@@ -84,8 +84,8 @@ make -C scripts/shims RX3="$PWD/extracted/XDJRX3/rootfs"
 # 4. copy the payload to the Prime GO
 scp deploy/* root@YOUR_PRIMEGO:/data/
 
-# 5. configure boot launcher & auto-start (on Prime GO)
-ssh root@YOUR_PRIMEGO 'python3 /data/setup_launcher.py --mode all'
+# 5. configure boot launcher & auto-start (on Prime GO with pure /bin/sh)
+ssh root@YOUR_PRIMEGO 'sh /data/setup-launcher.sh'
 # (optional) test run immediately via SSH:
 ssh root@YOUR_PRIMEGO 'sh /data/start-rb.sh'
 ```

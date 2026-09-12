@@ -281,14 +281,28 @@ PRIMEGO# cat /data/usbwatch.log
 
 ## Part D — Boot menu & Launch Automation
 
-You can configure on-screen touch booting and/or USB insertion auto-start using the Python setup tool:
+You can configure on-screen touch booting and/or USB insertion auto-start either from your workstation during staging or directly on the Prime GO:
+
+### Option 1: On-Device Setup (Pure POSIX `/bin/sh` — Zero Python dependency)
+
+After copying deployment scripts to `/data`, run the device configurator:
 
 ```bash
-# Option A: Automatic setup (configures /data/launcher.conf and installs udev auto-start rules)
-PRIMEGO# python3 /data/setup_launcher.py --mode all
+PRIMEGO# sh /data/setup-launcher.sh
+```
 
-# Option B: Install RetroGo package if /data/launcher is not yet present:
-PRIMEGO# python3 /data/setup_launcher.py --install-retrogo --package /path/to/retrogo.zip
+This automatically:
+- Configures `/data/launcher.conf` with `ENGINE |` and `REKORDBOX (XDJ-RX3)` entries.
+- Hooks `/etc/systemd/system/soundswitch.service.d/override.conf` if `/data/launcher` is present.
+- Installs the `/etc/udev/rules.d/99-primebox.rules` USB auto-start rule and `/data/check-and-launch-rb.sh`.
+
+### Option 2: Workstation Pre-Staging (Python tool)
+
+On your computer before deploying:
+
+```bash
+WORKSTATION$ python3 tools/launcher/setup_launcher.py --root deploy/ --mode all
+WORKSTATION$ scp -r deploy/* root@PRIMEGO:/data/
 ```
 
 ### Manual Configuration

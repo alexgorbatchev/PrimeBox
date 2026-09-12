@@ -23,6 +23,7 @@ Pioneer DJ XDJ-RX3 rekordbox standalone player (`rbp`) interoperability and hard
 - **Modern Host Toolchain Flag Guard:** When compiling with GCC 13+ / glibc 2.38+ headers, always supply `-U_FILE_OFFSET_BITS -D_FILE_OFFSET_BITS=32 -U_TIME_BITS -D_TIME_BITS=32 -fno-stack-protector` and link `legacy-scan.c` to avoid pulling unversioned `__isoc23_*` or 64-bit time symbols.
 - **Single-Library IOCTL Ownership:** `fbshim-tsc.so` must be first in `LD_PRELOAD` so it claims `/dev/fb0` ioctls and synthesizes the TSC2007 touch protocol before other shims.
 - **Clean Device Stubs:** Device nodes polled by threads (`/dev/subucom_spi*`, `hidg0`) must be FIFOs to prevent CPU busy-spin, while `/dev/gpiodrv` and `/dev/printkdrv0` must be regular files.
+- **Embedded Target Runtime Guarantee:** Stock Engine OS contains only `/bin/sh` and busybox utilities (no Python runtime). All device-side scripts must be pure POSIX `/bin/sh`. Host Python tools must run strictly on the workstation and populate the staging directory.
 
 ## Gotchas
 - `symbol open64 is already defined` -> Modern toolchains default to `_FILE_OFFSET_BITS=64`, aliasing `open` to `open64`. Pass `-U_FILE_OFFSET_BITS -D_FILE_OFFSET_BITS=32 -U_TIME_BITS -D_TIME_BITS=32` in `CFLAGS`.

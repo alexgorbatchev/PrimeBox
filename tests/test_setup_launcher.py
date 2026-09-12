@@ -185,5 +185,13 @@ class SetupLauncherTests(unittest.TestCase):
                 self.assertTrue((root / "data/launcher").exists())
 
 
+    def test_sh_script_syntax_and_execution(self):
+        import subprocess
+        script_path = ROOT / 'scripts/device/setup-launcher.sh'
+        # Check syntax using sh -n
+        res = subprocess.run(['sh', '-n', str(script_path)], capture_output=True, text=True)
+        self.assertEqual(res.returncode, 0, f"Syntax error in setup-launcher.sh: {res.stderr}")
+
+
 if __name__ == '__main__':
     unittest.main()
