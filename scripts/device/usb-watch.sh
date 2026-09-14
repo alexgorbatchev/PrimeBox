@@ -80,9 +80,16 @@ notify() {
     log "notify: $FIFO missing (rbp down?) — skipping"
     return 1
   fi
-  if "$TIMEOUT" 3 sh -c 'printf "%s" "$1" > "$2"' sh "$msg" "$FIFO" 2>/dev/null; then
-    log "notify: $msg"
-    return 0
+  if [ -x "$TIMEOUT" ]; then
+    if "$TIMEOUT" 3 sh -c 'printf "%s" "$1" > "$2"' sh "$msg" "$FIFO" 2>/dev/null; then
+      log "notify: $msg"
+      return 0
+    fi
+  else
+    if printf "%s" "$msg" > "$FIFO" 2>/dev/null; then
+      log "notify: $msg"
+      return 0
+    fi
   fi
   log "notify: FAILED to write '$msg' (rbp down?)"
   return 1
