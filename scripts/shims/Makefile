@@ -48,8 +48,8 @@ audioshim.so: audioshim.c
 	$(CC) $(CFLAGS) -shared -o $@ $< $(RX3LIB)/libdl.so.2 -lc $(LDFLAGS)
 
 # fbshim-tsc uses clock_gettime, link librt explicitly with -Wl,-z,defs.
-fbshim-tsc.so: fbshim-tsc.c
-	$(CC) $(CFLAGS) -shared -Wl,-z,defs -o $@ $< -lpthread -lc $(RX3LIB)/librt-2.13.so $(LDFLAGS)
+fbshim-tsc.so: fbshim-tsc.c legacy-scan.c
+	$(CC) $(CFLAGS) -shared -Wl,-z,defs -o $@ $^ -lpthread -lc $(RX3LIB)/librt-2.13.so $(LDFLAGS)
 
 gpioshim.so: gpioshim.c
 	$(CC) $(CFLAGS) -shared -o $@ $< -lc $(LDFLAGS)

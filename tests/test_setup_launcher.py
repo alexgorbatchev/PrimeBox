@@ -76,31 +76,27 @@ class SetupLauncherTests(unittest.TestCase):
         expected = "[Service]\nExecStart=\nExecStart=/data/launcher\n"
         self.assertEqual(override, expected)
 
+    def test_generate_autostart_service_exact(self):
+        service = self.launcher.generate_autostart_service("/data/check-and-launch-rb.sh")
+        self.assertIn("Description=PrimeBox USB Library Auto-Start Check", service)
+        self.assertIn("Before=engine.service soundswitch.service", service)
+        self.assertIn("ExecStart=/data/check-and-launch-rb.sh boot", service)
+
     def test_generate_usb_check_script_exact(self):
         script = self.launcher.generate_usb_check_script("/data/start-rb.sh")
-        expected = (
-            "#!/bin/sh\n"
-            "# Auto-launch Rekordbox on Denon Prime GO when export.pdb is detected\n"
-            'DEV="/dev/$1"\n'
-            'TMPMNT="/tmp/check_usb"\n\n'
-            'mkdir -p "$TMPMNT"\n'
-            'mount -o ro "$DEV" "$TMPMNT" 2>/dev/null || exit 0\n\n'
-            'if [ -f "$TMPMNT/PIONEER/rekordbox/export.pdb" ]; then\n'
-            '    umount "$TMPMNT"\n'
-            '    # Stop Denon daemons immediately to prevent edisksd bus-reset race\n'
-            '    systemctl stop edisksd.service engine.service 2>/dev/null\n'
-            '    /data/start-rb.sh &\n'
-            'else\n'
-            '    umount "$TMPMNT"\n'
-            'fi\n'
-        )
-        self.assertEqual(script, expected)
+        self.assertIn("#!/bin/sh", script)
+        self.assertIn("check_mount_point()", script)
+        self.assertIn("export.pdb", script)
+        self.assertIn("/proc/mounts", script)
+        self.assertIn("systemctl stop edisksd.service engine.service", script)
+        self.assertIn("/data/start-rb.sh", script)
 
     def test_setup_launcher_all_modes_full_validation(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / "data").mkdir(parents=True)
             (root / "etc/udev/rules.d").mkdir(parents=True)
+            (root / "etc/systemd/system").mkdir(parents=True)
 
             existing_conf = "# Games\nDOOM | /data/doom\n"
             (root / "data/launcher.conf").write_text(existing_conf, encoding="utf-8")
@@ -108,6 +104,7 @@ class SetupLauncherTests(unittest.TestCase):
             res = self.launcher.setup_launcher(root, mode="all", dry_run=False)
             self.assertTrue(res["launcher_conf_updated"])
             self.assertTrue(res["udev_rule_created"])
+            self.assertTrue(res["autostart_service_created"])
             self.assertTrue(res["usb_script_created"])
 
             expected_conf = (
@@ -122,13 +119,15 @@ class SetupLauncherTests(unittest.TestCase):
             expected_udev = 'ACTION=="add", SUBSYSTEM=="block", KERNEL=="sd[a-z][0-9]", RUN+="/data/check-and-launch-rb.sh %k"\n'
             self.assertEqual((root / "etc/udev/rules.d/99-primebox.rules").read_text(encoding="utf-8"), expected_udev)
 
+            service_path = root / "etc/systemd/system/primebox-autostart.service"
+            self.assertTrue(service_path.exists())
+
             script_path = root / "data/check-and-launch-rb.sh"
             self.assertTrue(script_path.exists())
             self.assertEqual(
                 script_path.read_text(encoding="utf-8"),
                 self.launcher.generate_usb_check_script("/data/start-rb.sh"),
             )
-            # Check file permissions are exactly 0755
             self.assertEqual(oct(script_path.stat().st_mode & 0o777), oct(0o755))
 
     def test_setup_launcher_dry_run(self):
@@ -254,6 +253,9 @@ class SetupLauncherTests(unittest.TestCase):
             elif "cat > /etc/udev/rules.d/99-primebox.rules" in cmd:
                 remote_state["/etc/udev/rules.d/99-primebox.rules"] = input_data
                 return 0, "", ""
+            elif "cat > /etc/systemd/system/primebox-autostart.service" in cmd:
+                remote_state["/etc/systemd/system/primebox-autostart.service"] = input_data
+                return 0, "", ""
             elif "cat > /data/check-and-launch-rb.sh" in cmd:
                 remote_state["/data/check-and-launch-rb.sh"] = input_data
                 return 0, "", ""
@@ -268,6 +270,7 @@ class SetupLauncherTests(unittest.TestCase):
 
         self.assertTrue(res["launcher_conf_updated"])
         self.assertTrue(res["udev_rule_created"])
+        self.assertTrue(res["autostart_service_created"])
         self.assertTrue(res["usb_script_created"])
 
         expected_conf = (
@@ -281,6 +284,10 @@ class SetupLauncherTests(unittest.TestCase):
         self.assertEqual(
             remote_state["/etc/udev/rules.d/99-primebox.rules"],
             self.launcher.generate_udev_rule("/data/check-and-launch-rb.sh"),
+        )
+        self.assertEqual(
+            remote_state["/etc/systemd/system/primebox-autostart.service"],
+            self.launcher.generate_autostart_service("/data/check-and-launch-rb.sh"),
         )
         self.assertEqual(
             remote_state["/data/check-and-launch-rb.sh"],

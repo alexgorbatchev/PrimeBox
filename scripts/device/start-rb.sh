@@ -30,8 +30,10 @@ cp /data/fbshim-tsc.so /data/rbx3-run/root/pdj/fbshim.so
 cp /data/fbshim-tsc.so /data/rbx3-run/usr/lib/fbshim.so
 chmod 755 /data/rbx3-run/usr/lib/fbshim.so /data/rbx3-run/root/pdj/fbshim.so
 
+mkdir -p /data/rbx3-run/usr/lib/directfb-1.4-0/systems /data/rbx3-run/usr/lib/directfb-1.4-6/systems
+cp /data/libdirectfb_fbdev-rot16.so /data/rbx3-run/usr/lib/directfb-1.4-0/systems/libdirectfb_fbdev.so
 cp /data/libdirectfb_fbdev-rot16.so /data/rbx3-run/usr/lib/directfb-1.4-6/systems/libdirectfb_fbdev.so
-chmod 755 /data/rbx3-run/usr/lib/directfb-1.4-6/systems/libdirectfb_fbdev.so
+chmod 755 /data/rbx3-run/usr/lib/directfb-1.4-*/systems/libdirectfb_fbdev.so
 
 # 5. Clean stale IPC and logs
 rm -f /tmp/guard_LocalDBServer /tmp/req_LocalDBServer /tmp/knobshim.log /tmp/audioshim.log /tmp/dfbdig*.log /tmp/rot_surface.dump

@@ -2,7 +2,8 @@
 """PrimeBox launcher setup and auto-start configuration tool for Denon Prime GO.
 
 Configures on-screen touch boot menu (/data/launcher.conf), RetroGo installation,
-and/or host udev rules for automatic Rekordbox standalone startup upon USB insertion.
+boot-time auto-start service, and host udev rules for automatic Rekordbox standalone
+startup upon USB insertion or boot.
 """
 
 import argparse
@@ -89,23 +90,111 @@ ExecStart={launcher_path}
 """
 
 
+def generate_autostart_service(script_path: str = "/data/check-and-launch-rb.sh") -> str:
+    """Generate systemd service for boot-time Rekordbox USB auto-launch."""
+    return f"""[Unit]
+Description=PrimeBox USB Library Auto-Start Check
+Before=engine.service soundswitch.service
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart={script_path} boot
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+"""
+
+
 def generate_usb_check_script(target_script: str = "/data/start-rb.sh") -> str:
-    """Generate shell script that inspects newly inserted USB partition."""
+    """Generate shell script that inspects newly inserted or boot-mounted USB partition."""
     return f"""#!/bin/sh
 # Auto-launch Rekordbox on Denon Prime GO when export.pdb is detected
-DEV="/dev/$1"
-TMPMNT="/tmp/check_usb"
 
-mkdir -p "$TMPMNT"
-mount -o ro "$DEV" "$TMPMNT" 2>/dev/null || exit 0
+# Avoid re-launching if rbp is already active
+if ps w | grep -v grep | grep -q '/root/pdj/rbp'; then
+    exit 0
+fi
 
-if [ -f "$TMPMNT/PIONEER/rekordbox/export.pdb" ]; then
-    umount "$TMPMNT"
+check_mount_point() {{
+    MNT="$1"
+    [ -z "$MNT" ] || [ ! -d "$MNT" ] && return 1
+    if [ -f "$MNT/PIONEER/rekordbox/export.pdb" ] || \\
+       [ -f "$MNT/pioneer/rekordbox/export.pdb" ] || \\
+       [ -f "$MNT/PIONEER/REKORDBOX/export.pdb" ] || \\
+       [ -f "$MNT/PIONEER/rekordbox/exportExt.pdb" ] || \\
+       [ -f "$MNT/PIONEER/rekordbox/exportLibrary.db" ]; then
+        return 0
+    fi
+    return 1
+}}
+
+FOUND=0
+
+if [ -n "$1" ] && [ "$1" != "boot" ]; then
+    DEV="$1"
+    case "$DEV" in
+        /dev/*) ;;
+        *) DEV="/dev/$DEV" ;;
+    esac
+
+    # Check if partition is already mounted anywhere in /proc/mounts (e.g. by edisksd)
+    EXISTING_MNT=$(awk -v d="$DEV" '$1 == d {{print $2; exit}}' /proc/mounts 2>/dev/null)
+    if [ -n "$EXISTING_MNT" ] && check_mount_point "$EXISTING_MNT"; then
+        FOUND=1
+    elif [ -b "$DEV" ]; then
+        TMPMNT="/tmp/check_usb_$$"
+        mkdir -p "$TMPMNT"
+        if mount -o ro "$DEV" "$TMPMNT" 2>/dev/null; then
+            if check_mount_point "$TMPMNT"; then
+                FOUND=1
+            fi
+            umount "$TMPMNT" 2>/dev/null
+        fi
+        rmdir "$TMPMNT" 2>/dev/null
+    fi
+else
+    # Boot check or global scan: check /media/* mounts first
+    for m in /media/*; do
+        if check_mount_point "$m"; then
+            FOUND=1
+            break
+        fi
+    done
+
+    # Fallback to scanning unmounted sd block devices
+    if [ "$FOUND" -eq 0 ]; then
+        for d in /dev/sd[a-z][0-9]; do
+            [ -b "$d" ] || continue
+            EXISTING_MNT=$(awk -v dev="$d" '$1 == dev {{print $2; exit}}' /proc/mounts 2>/dev/null)
+            if [ -n "$EXISTING_MNT" ]; then
+                if check_mount_point "$EXISTING_MNT"; then
+                    FOUND=1
+                    break
+                fi
+            else
+                TMPMNT="/tmp/check_usb_$$"
+                mkdir -p "$TMPMNT"
+                if mount -o ro "$d" "$TMPMNT" 2>/dev/null; then
+                    if check_mount_point "$TMPMNT"; then
+                        FOUND=1
+                        umount "$TMPMNT" 2>/dev/null
+                        rmdir "$TMPMNT" 2>/dev/null
+                        break
+                    fi
+                    umount "$TMPMNT" 2>/dev/null
+                fi
+                rmdir "$TMPMNT" 2>/dev/null
+            fi
+        done
+    fi
+fi
+
+if [ "$FOUND" -eq 1 ]; then
     # Stop Denon daemons immediately to prevent edisksd bus-reset race
     systemctl stop edisksd.service engine.service 2>/dev/null
-    {target_script} &
-else
-    umount "$TMPMNT"
+    nohup {target_script} >/data/start-rb.log 2>&1 &
 fi
 """
 
@@ -136,17 +225,14 @@ def install_retrogo(
 
             if not dry_run:
                 data_dir.mkdir(parents=True, exist_ok=True)
-                # Try zip format
                 try:
                     with zipfile.ZipFile(io.BytesIO(pkg_data)) as z:
                         z.extractall(data_dir)
                 except zipfile.BadZipFile:
-                    # Try tar format
                     try:
                         with tarfile.open(fileobj=io.BytesIO(pkg_data)) as t:
                             t.extractall(data_dir)
                     except tarfile.TarError:
-                        # Fallback: single raw executable
                         launcher_bin.write_bytes(pkg_data)
 
                 if launcher_bin.exists():
@@ -155,7 +241,6 @@ def install_retrogo(
             results["retrogo_installed"] = True
             results["files_modified"].append(str(launcher_bin))
 
-    # Configure soundswitch.service override
     override_path = root_dir / "etc/systemd/system/soundswitch.service.d/override.conf"
     override_content = generate_soundswitch_override()
     results["soundswitch_hooked"] = True
@@ -180,6 +265,7 @@ def setup_launcher(
         "launcher_conf_updated": False,
         "retrogo_installed": False,
         "udev_rule_created": False,
+        "autostart_service_created": False,
         "usb_script_created": False,
         "files_modified": [],
     }
@@ -210,6 +296,14 @@ def setup_launcher(
         if not dry_run:
             udev_path.parent.mkdir(parents=True, exist_ok=True)
             udev_path.write_text(rule_content, encoding="utf-8")
+
+        service_path = root_dir / "etc/systemd/system/primebox-autostart.service"
+        service_content = generate_autostart_service()
+        results["autostart_service_created"] = True
+        results["files_modified"].append(str(service_path))
+        if not dry_run:
+            service_path.parent.mkdir(parents=True, exist_ok=True)
+            service_path.write_text(service_content, encoding="utf-8")
 
         script_path = root_dir / "data/check-and-launch-rb.sh"
         script_content = generate_usb_check_script()
@@ -250,6 +344,7 @@ def setup_launcher_remote(
         "launcher_conf_updated": False,
         "retrogo_installed": False,
         "udev_rule_created": False,
+        "autostart_service_created": False,
         "usb_script_created": False,
         "files_modified": [],
     }
@@ -257,7 +352,6 @@ def setup_launcher_remote(
     if install_package:
         code, _, _ = run(target, "test -f /data/launcher")
         if code != 0 and package_source:
-            # Package extraction over SSH
             if not dry_run:
                 if package_source.startswith("http://") or package_source.startswith("https://"):
                     req = urllib.request.urlopen(package_source)
@@ -265,7 +359,6 @@ def setup_launcher_remote(
                 else:
                     pkg_data = Path(package_source).read_bytes()
 
-                # Upload archive and extract
                 run(target, "mkdir -p /data && tar -xz -C /data/ 2>/dev/null || unzip -o -d /data/ - 2>/dev/null", input_data=pkg_data.decode("latin1", errors="ignore"))
                 run(target, "chmod 755 /data/launcher 2>/dev/null || true")
 
@@ -292,6 +385,12 @@ def setup_launcher_remote(
         results["files_modified"].append(f"{target}:/etc/udev/rules.d/99-primebox.rules")
         if not dry_run:
             run(target, "mkdir -p /etc/udev/rules.d && cat > /etc/udev/rules.d/99-primebox.rules && udevadm control --reload-rules 2>/dev/null || true", input_data=rule_content)
+
+        service_content = generate_autostart_service()
+        results["autostart_service_created"] = True
+        results["files_modified"].append(f"{target}:/etc/systemd/system/primebox-autostart.service")
+        if not dry_run:
+            run(target, "cat > /etc/systemd/system/primebox-autostart.service && systemctl daemon-reload && systemctl enable primebox-autostart.service 2>/dev/null || true", input_data=service_content)
 
         script_content = generate_usb_check_script()
         results["usb_script_created"] = True
@@ -364,7 +463,7 @@ def main() -> int:
         )
 
     if agent_mode:
-        print(f"STATUS: SUCCESS")
+        print("STATUS: SUCCESS")
         print(f"MODE: {args.mode}")
         print(f"DRY_RUN: {args.dry_run}")
         for f in res["files_modified"]:
