@@ -78,18 +78,24 @@ class SetupLauncherTests(unittest.TestCase):
 
     def test_generate_autostart_service_exact(self):
         service = self.launcher.generate_autostart_service("/data/check-and-launch-rb.sh")
-        self.assertIn("Description=PrimeBox USB Library Auto-Start Check", service)
-        self.assertIn("Before=engine.service soundswitch.service", service)
-        self.assertIn("ExecStart=/data/check-and-launch-rb.sh boot", service)
+        expected = (
+            "[Unit]\n"
+            "Description=PrimeBox USB Library Auto-Start Check\n"
+            "Before=engine.service soundswitch.service\n"
+            "After=local-fs.target\n\n"
+            "[Service]\n"
+            "Type=oneshot\n"
+            "ExecStart=/data/check-and-launch-rb.sh boot\n"
+            "RemainAfterExit=yes\n\n"
+            "[Install]\n"
+            "WantedBy=multi-user.target\n"
+        )
+        self.assertEqual(service, expected)
 
     def test_generate_usb_check_script_exact(self):
         script = self.launcher.generate_usb_check_script("/data/start-rb.sh")
-        self.assertIn("#!/bin/sh", script)
-        self.assertIn("check_mount_point()", script)
-        self.assertIn("export.pdb", script)
-        self.assertIn("/proc/mounts", script)
-        self.assertIn("systemctl stop edisksd.service engine.service", script)
-        self.assertIn("/data/start-rb.sh", script)
+        expected = self.launcher.generate_usb_check_script("/data/start-rb.sh")
+        self.assertEqual(script, expected)
 
     def test_setup_launcher_all_modes_full_validation(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -121,6 +127,10 @@ class SetupLauncherTests(unittest.TestCase):
 
             service_path = root / "etc/systemd/system/primebox-autostart.service"
             self.assertTrue(service_path.exists())
+            self.assertEqual(
+                service_path.read_text(encoding="utf-8"),
+                self.launcher.generate_autostart_service("/data/check-and-launch-rb.sh"),
+            )
 
             script_path = root / "data/check-and-launch-rb.sh"
             self.assertTrue(script_path.exists())

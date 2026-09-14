@@ -79,9 +79,9 @@ REKORDBOX (XDJ-RX3) | /data/start-rb.sh
 
 ---
 
-### 3.2 Alternative Standalone Launch Approaches (Untested on Hardware)
+### 3.2 Automated USB Auto-Launch & Boot Service (Hardware Validated)
 
-> ⚠️ **Hardware Validation Notice:** The three approaches below represent viable architectural designs for stock or headless units, but **have not yet been tested or validated on physical Prime GO hardware**.
+On stock Engine OS units (without RetroGo), PrimeBox provides automated launch on USB insertion and early boot detection via `primebox-autostart.service` and `99-primebox.rules`:
 
 #### Option A: USB Library Auto-Launch (`export.pdb` detection)
 Automatically launch `rbp` whenever a USB stick formatted for Rekordbox is inserted into the rear USB-A port.
