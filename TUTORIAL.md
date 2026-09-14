@@ -166,9 +166,9 @@ PRIMEGO# uname -a
 PRIMEGO# df -h /data                          # ensure >100 MB free
 ```
 
-If root login is disabled, enable Developer/SSH mode from the Prime GO's
-settings first (Denon's "Update & Reset" / engineering menu, depending on
-firmware). The reference unit already allows `root` SSH.
+If root login is disabled on retail firmware, follow the instructions at
+**[icedream/denon-prime4](https://github.com/icedream/denon-prime4)** to enable SSH
+and obtain root access on your PRIME GO before proceeding.
 
 ### B1. Create the soft-float chroot
 

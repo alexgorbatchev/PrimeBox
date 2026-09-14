@@ -83,6 +83,7 @@ Pioneer DJ XDJ-RX3 rekordbox standalone player (`rbp`) interoperability and hard
   - Only commit original translation source code (C), build automation scripts, documentation, and byte-offset patch definitions (`src/primebox/patch/patch_rbp.py`).
 
 ## User Instructions & Architecture History
+- **PRIME GO Root & SSH Documentation**: Documented root SSH requirement and instructions via `icedream/denon-prime4` in `README.md` as an `[!IMPORTANT]` callout following the project introduction.
 - **Python Package Standardization (PEP 621 / `src/` Layout)**: Reworked the repository from ad-hoc standalone scripts into a standard Python package (`src/primebox`) managed with `uv` and `pyproject.toml`, containing modules for `bundle`, `launcher`, `patch`, and `verify`. Colocation of tests is avoided in favor of a clean root `tests/` directory with direct package imports. Missing test suites (including `tests/test_patch_rbp.py`) are added with >= 90% code coverage.
 
 ## References

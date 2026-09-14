@@ -16,6 +16,9 @@ and real 4-channel audio out of the master and headphone outputs.
 > rekordbox content.** You supply your own firmware; the tooling in this repo
 > extracts and patches it. See [NOTICE.md](NOTICE.md).
 
+> [!IMPORTANT]
+> **Getting root and SSH:** Follow the instructions at **[icedream/denon-prime4](https://github.com/icedream/denon-prime4)** to enable SSH and obtain root access on your PRIME GO. Root access must be set up before deploying RetroGo.
+
 ---
 
 ## Status
